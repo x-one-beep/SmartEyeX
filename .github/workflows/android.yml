@@ -1,51 +1,49 @@
-name: Build Android APK
+name: Build SmartEyeX APK
 
+# Trigger workflow setiap ada push ke branch main
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
-  build-android:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      # Checkout kode dari repo
+      - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: Set up JDK
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Install Node.js
+      # Setup Node.js versi 20 (Desember 2025)
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: 20
 
+      # Install dependencies npm
+      - name: Install Dependencies
+        run: npm install
+
+      # Install Capacitor CLI global
       - name: Install Capacitor CLI
         run: npm install -g @capacitor/cli
 
-      - name: Install dependencies
-        run: npm install
+      # Tambah platform Android
+      - name: Add Android Platform
+        run: npx cap add android
 
-      - name: Build Web
-        run: npm run build
+      # Sinkronisasi proyek web ke platform Android
+      - name: Sync Capacitor
+        run: npx cap sync android
 
-      - name: Copy Web to Capacitor
-        run: npx cap copy
-
-      - name: Add Android Platform (if not exists)
-        run: npx cap add android || echo "Android platform exists"
-
+      # Build APK release
       - name: Build APK
-        working-directory: android
-        run: ./gradlew assembleRelease
+        run: ./android/gradlew assembleRelease
 
+      # Upload APK sebagai artifact
       - name: Upload APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: SmartEyeX-APK
           path: android/app/build/outputs/apk/release/app-release.apk
