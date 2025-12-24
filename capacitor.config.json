@@ -1,0 +1,6 @@
+{
+  "appId": "com.smarteyex.bungx",
+  "appName": "Smart Eye X",
+  "webDir": "web",
+  "bundledWebRuntime": false
+}

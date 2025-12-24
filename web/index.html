@@ -1,0 +1,2660 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Eye X</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: linear-gradient(135deg, #0a0a0f 0%, #12121a 100%);
+    }
+
+    /* Animated Background Particles */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: rgba(0, 255, 255, 0.3);
+      border-radius: 50%;
+      animation: float 20s infinite ease-in-out;
+      box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+    }
+
+    .particle:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; animation-duration: 25s; }
+    .particle:nth-child(2) { left: 80%; top: 40%; animation-delay: 2s; animation-duration: 30s; }
+    .particle:nth-child(3) { left: 30%; top: 60%; animation-delay: 4s; animation-duration: 22s; }
+    .particle:nth-child(4) { left: 60%; top: 15%; animation-delay: 1s; animation-duration: 28s; }
+    .particle:nth-child(5) { left: 45%; top: 75%; animation-delay: 3s; animation-duration: 26s; }
+    .particle:nth-child(6) { left: 90%; top: 80%; animation-delay: 5s; animation-duration: 24s; }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0); opacity: 0.3; }
+      25% { transform: translate(20px, -30px); opacity: 0.6; }
+      50% { transform: translate(-15px, -60px); opacity: 0.4; }
+      75% { transform: translate(30px, -40px); opacity: 0.5; }
+    }
+
+    /* Screen Container */
+    .screen {
+      width: 100%;
+      min-height: 100%;
+      padding: 24px 20px;
+      position: relative;
+      z-index: 2;
+      display: none;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Boot Screen */
+    .boot-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100%;
+      text-align: center;
+    }
+
+    .logo-container {
+      position: relative;
+      margin-bottom: 40px;
+      animation: logoGlow 3s ease-in-out infinite;
+    }
+
+    .logo {
+      font-size: 48px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #00ffff 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 2px;
+      filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5));
+    }
+
+    @keyframes logoGlow {
+      0%, 100% { filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5)); }
+      50% { filter: drop-shadow(0 0 35px rgba(0, 255, 255, 0.8)); }
+    }
+
+    .boot-text {
+      font-size: 14px;
+      color: #9ca3af;
+      margin-bottom: 30px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    .progress-line {
+      width: 200px;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00ffff 0%, #a78bfa 100%);
+      border-radius: 10px;
+      animation: loading 2s ease-in-out infinite;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+    }
+
+    @keyframes loading {
+      0% { width: 0%; }
+      50% { width: 70%; }
+      100% { width: 100%; }
+    }
+
+    /* Glass Card */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .header-title {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #00ffff 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 20px;
+    }
+
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+    }
+
+    /* Status Ring */
+    .status-ring-container {
+      display: flex;
+      justify-content: center;
+      margin: 30px 0;
+    }
+
+    .status-ring {
+      width: 180px;
+      height: 180px;
+      position: relative;
+    }
+
+    .ring-bg {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, #00ffff 0%, #a78bfa 50%, #00ffff 100%);
+      padding: 3px;
+      animation: rotate 3s linear infinite;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .ring-inner {
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 10, 15, 0.95);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .battery-percent {
+      font-size: 36px;
+      font-weight: 700;
+      color: #00ffff;
+      text-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+    }
+
+    .battery-label {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    /* AI Orb */
+    .ai-orb-container {
+      display: flex;
+      justify-content: center;
+      margin: 30px 0;
+    }
+
+    .ai-orb {
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle, rgba(0, 255, 255, 0.3) 0%, rgba(167, 139, 250, 0.2) 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 40px rgba(0, 255, 255, 0.4);
+      animation: breathe 4s ease-in-out infinite;
+      position: relative;
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 40px rgba(0, 255, 255, 0.4); }
+      50% { transform: scale(1.05); box-shadow: 0 0 60px rgba(0, 255, 255, 0.6); }
+    }
+
+    .ai-orb-inner {
+      width: 80px;
+      height: 80px;
+      background: rgba(0, 255, 255, 0.1);
+      border-radius: 50%;
+      border: 2px solid rgba(0, 255, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+    }
+
+    /* Status Text */
+    .status-text {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .status-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #00ffff;
+      margin-bottom: 8px;
+    }
+
+    .status-subtitle {
+      font-size: 14px;
+      color: #9ca3af;
+      line-height: 1.6;
+    }
+
+    /* Mode Cards */
+    .mode-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .mode-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mode-card:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(0, 255, 255, 0.2);
+    }
+
+    .mode-card.active {
+      border-color: rgba(0, 255, 255, 0.5);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    }
+
+    .mode-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      display: inline-block;
+      animation: iconFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes iconFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    .mode-card.active .mode-icon {
+      filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.8));
+    }
+
+    .mode-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e0e0e0;
+      margin-bottom: 4px;
+    }
+
+    .mode-desc {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 80px;
+      background: rgba(10, 10, 15, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 20px;
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      padding: 8px 16px;
+      border-radius: 12px;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-item.active {
+      background: rgba(0, 255, 255, 0.1);
+    }
+
+    .nav-icon {
+      font-size: 24px;
+      opacity: 0.6;
+      transition: all 0.3s ease;
+    }
+
+    .nav-item.active .nav-icon {
+      opacity: 1;
+      filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.6));
+    }
+
+    .nav-label {
+      font-size: 11px;
+      color: #9ca3af;
+      transition: all 0.3s ease;
+    }
+
+    .nav-item.active .nav-label {
+      color: #00ffff;
+    }
+
+    /* Voice Wave */
+    .voice-wave {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      height: 60px;
+      margin: 20px 0;
+    }
+
+    .wave-bar {
+      width: 4px;
+      background: linear-gradient(180deg, #00ffff 0%, #a78bfa 100%);
+      border-radius: 4px;
+      animation: wave 1.2s ease-in-out infinite;
+    }
+
+    .wave-bar:nth-child(1) { height: 20px; animation-delay: 0s; }
+    .wave-bar:nth-child(2) { height: 35px; animation-delay: 0.1s; }
+    .wave-bar:nth-child(3) { height: 50px; animation-delay: 0.2s; }
+    .wave-bar:nth-child(4) { height: 40px; animation-delay: 0.3s; }
+    .wave-bar:nth-child(5) { height: 55px; animation-delay: 0.4s; }
+    .wave-bar:nth-child(6) { height: 30px; animation-delay: 0.5s; }
+    .wave-bar:nth-child(7) { height: 45px; animation-delay: 0.6s; }
+
+    @keyframes wave {
+      0%, 100% { transform: scaleY(0.5); opacity: 0.5; }
+      50% { transform: scaleY(1); opacity: 1; }
+    }
+
+    /* Button */
+    .primary-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(167, 139, 250, 0.2) 100%);
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      border-radius: 16px;
+      color: #00ffff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(0, 255, 255, 0.2);
+    }
+
+    .primary-btn:hover {
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.3) 0%, rgba(167, 139, 250, 0.3) 100%);
+      box-shadow: 0 6px 30px rgba(0, 255, 255, 0.4);
+      transform: translateY(-2px);
+    }
+
+    /* Face Card */
+    .face-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .face-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.4s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .face-card:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(0, 255, 255, 0.3);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+    }
+
+    .face-avatar {
+      width: 100%;
+      aspect-ratio: 1;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(167, 139, 250, 0.2) 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+
+    .face-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e0e0e0;
+      margin-bottom: 4px;
+    }
+
+    .face-meta {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+
+    .confidence-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .confidence-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00ffff 0%, #a78bfa 100%);
+      border-radius: 4px;
+      box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+    }
+
+    /* Settings Item */
+    .settings-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .settings-item:last-child {
+      border-bottom: none;
+    }
+
+    .settings-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .settings-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(0, 255, 255, 0.1);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .settings-info h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #e0e0e0;
+      margin-bottom: 4px;
+    }
+
+    .settings-info p {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    /* Toggle Switch */
+    .toggle-switch {
+      width: 52px;
+      height: 28px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .toggle-switch.active {
+      background: linear-gradient(135deg, #00ffff 0%, #a78bfa 100%);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+    }
+
+    .toggle-knob {
+      width: 24px;
+      height: 24px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: all 0.3s ease;
+    }
+
+    .toggle-switch.active .toggle-knob {
+      left: 26px;
+    }
+
+    /* Scan Lines */
+    .scan-lines {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 3;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 255, 0.03) 2px,
+        rgba(0, 255, 255, 0.03) 4px
+      );
+      opacity: 0.3;
+    }
+
+    /* Padding bottom for nav */
+    .screen {
+      padding-bottom: 100px;
+    }
+
+    /* Status Badge */
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(0, 255, 255, 0.1);
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #00ffff;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: #00ffff;
+      border-radius: 50%;
+      animation: statusPulse 2s ease-in-out infinite;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    }
+
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.8); }
+    }
+
+    /* Card Title */
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #e0e0e0;
+      margin-bottom: 20px;
+    }
+
+    /* Dual Battery */
+    .dual-battery {
+      display: flex;
+      gap: 20px;
+      justify-content: space-around;
+    }
+
+    .battery-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .battery-icon-wrapper {
+      width: 80px;
+      height: 80px;
+      position: relative;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .battery-liquid {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(180deg, rgba(0, 255, 255, 0.4) 0%, rgba(0, 255, 255, 0.2) 100%);
+      transition: height 0.5s ease;
+      overflow: hidden;
+    }
+
+    .battery-wave {
+      position: absolute;
+      top: -10px;
+      left: -50%;
+      width: 200%;
+      height: 20px;
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+      animation: waveMove 3s linear infinite;
+    }
+
+    @keyframes waveMove {
+      0% { transform: translateX(0) translateY(0); }
+      50% { transform: translateX(25%) translateY(-5px); }
+      100% { transform: translateX(50%) translateY(0); }
+    }
+
+    .battery-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 32px;
+      z-index: 2;
+    }
+
+    .battery-info {
+      text-align: center;
+    }
+
+    .battery-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #00ffff;
+      text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    }
+
+    .battery-label-small {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    /* AI Hybrid Display */
+    .ai-hybrid-display {
+      padding: 20px 0;
+    }
+
+    .ai-mode-indicator {
+      text-align: center;
+    }
+
+    .ai-icon-large {
+      font-size: 56px;
+      margin-bottom: 16px;
+      animation: iconFloat 3s ease-in-out infinite;
+    }
+
+    .ai-mode-text {
+      font-size: 16px;
+      font-weight: 600;
+      color: #e0e0e0;
+      margin-bottom: 20px;
+    }
+
+    .ai-load-bar {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      margin-bottom: 12px;
+    }
+
+    .load-segment {
+      height: 100%;
+      transition: width 0.5s ease;
+    }
+
+    .local-load {
+      background: linear-gradient(90deg, #00ffff 0%, #00d4d4 100%);
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    }
+
+    .cloud-load {
+      background: linear-gradient(90deg, #a78bfa 0%, #8b5cf6 100%);
+      box-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
+    }
+
+    .ai-load-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .action-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 16px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0, 255, 255, 0.2);
+    }
+
+    .action-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .action-label {
+      font-size: 10px;
+      color: #9ca3af;
+      font-weight: 500;
+    }
+
+    /* Sensor Status */
+    .sensor-status {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .sensor-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sensor-icon {
+      font-size: 32px;
+      opacity: 0.5;
+    }
+
+    .sensor-icon.active {
+      opacity: 1;
+      animation: sensorGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes sensorGlow {
+      0%, 100% { filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.5)); }
+      50% { filter: drop-shadow(0 0 15px rgba(0, 255, 255, 0.8)); }
+    }
+
+    .sensor-info {
+      flex: 1;
+    }
+
+    .sensor-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e0e0e0;
+      margin-bottom: 4px;
+    }
+
+    .sensor-state {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .sensor-state.active {
+      color: #00ffff;
+      font-weight: 600;
+    }
+
+    .sensor-pulse {
+      width: 12px;
+      height: 12px;
+      background: #00ffff;
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.6; }
+    }
+
+    /* Sensor Grid */
+    .sensor-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .sensor-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .sensor-card.active {
+      border-color: rgba(0, 255, 255, 0.3);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
+    }
+
+    .sensor-icon-small {
+      font-size: 28px;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+
+    .sensor-label {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+
+    .sensor-reading {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e0e0e0;
+    }
+
+    .sensor-card.active .sensor-reading {
+      color: #00ffff;
+    }
+
+    /* Connection Bars */
+    .connection-bars {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 8px;
+      height: 60px;
+      margin-bottom: 16px;
+    }
+
+    .signal-bar {
+      width: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+
+    .signal-bar:nth-child(1) { height: 20%; }
+    .signal-bar:nth-child(2) { height: 40%; }
+    .signal-bar:nth-child(3) { height: 60%; }
+    .signal-bar:nth-child(4) { height: 80%; }
+    .signal-bar:nth-child(5) { height: 100%; }
+
+    .signal-bar.active {
+      background: linear-gradient(180deg, #00ffff 0%, #a78bfa 100%);
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    }
+
+    .connection-info {
+      text-align: center;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    /* AI Mode Selector */
+    .ai-mode-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .mode-option {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .mode-option:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .mode-option.active {
+      border-color: rgba(0, 255, 255, 0.5);
+      background: rgba(0, 255, 255, 0.05);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+    }
+
+    .mode-radio {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .mode-option.active .mode-radio {
+      border-color: #00ffff;
+    }
+
+    .mode-option.active .mode-radio::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px;
+      height: 10px;
+      background: #00ffff;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    }
+
+    .mode-content {
+      flex: 1;
+    }
+
+    .mode-option-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #e0e0e0;
+      margin-bottom: 4px;
+    }
+
+    .mode-option-desc {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    /* Workload Visual */
+    .workload-visual {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .workload-circle {
+      position: relative;
+      width: 160px;
+      height: 160px;
+    }
+
+    .workload-svg {
+      width: 100%;
+      height: 100%;
+      transform: scaleX(-1);
+    }
+
+    .progress-circle {
+      transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .workload-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .workload-percent {
+      font-size: 32px;
+      font-weight: 700;
+      color: #00ffff;
+      text-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+    }
+
+    .workload-label {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    .workload-stats {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-row:last-child {
+      border-bottom: none;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    .stat-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e0e0e0;
+    }
+
+    /* Memory Stats */
+    .memory-stat {
+      display: flex;
+      justify-content: space-around;
+      margin: 24px 0;
+    }
+
+    .memory-stat-item {
+      text-align: center;
+    }
+
+    .memory-number {
+      font-size: 32px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #00ffff 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .memory-label {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    /* Voice Data List */
+    .voice-data-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .data-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .data-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(0, 255, 255, 0.2);
+    }
+
+    .data-icon {
+      font-size: 28px;
+    }
+
+    .data-info {
+      flex: 1;
+    }
+
+    .data-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e0e0e0;
+      margin-bottom: 4px;
+    }
+
+    .data-meta {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .data-size {
+      font-size: 12px;
+      font-weight: 600;
+      color: #00ffff;
+    }
+
+    /* Sync Timeline */
+    .sync-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+      padding-left: 32px;
+    }
+
+    .sync-timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: linear-gradient(180deg, #00ffff 0%, rgba(0, 255, 255, 0.2) 100%);
+    }
+
+    .sync-item {
+      display: flex;
+      gap: 16px;
+      position: relative;
+    }
+
+    .sync-dot {
+      position: absolute;
+      left: -28px;
+      top: 4px;
+      width: 12px;
+      height: 12px;
+      background: #00ffff;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+      z-index: 1;
+    }
+
+    .sync-content {
+      flex: 1;
+    }
+
+    .sync-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e0e0e0;
+      margin-bottom: 4px;
+    }
+
+    .sync-time {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    /* Mode Card Large */
+    .mode-card-large {
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .mode-card-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .mode-card-icon {
+      font-size: 32px;
+    }
+
+    .mode-card-title {
+      flex: 1;
+      font-size: 16px;
+      font-weight: 600;
+      color: #e0e0e0;
+    }
+
+    .mode-card-body {
+      font-size: 13px;
+      color: #9ca3af;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .mode-card-settings {
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .mode-setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    .slider-container {
+      width: 150px;
+    }
+
+    .mode-slider {
+      width: 100%;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      outline: none;
+    }
+
+    .mode-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: linear-gradient(135deg, #00ffff 0%, #a78bfa 100%);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    }
+
+    .mode-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: linear-gradient(135deg, #00ffff 0%, #a78bfa 100%);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+      border: none;
+    }
+
+    /* Battery 3D */
+    .battery-3d-container {
+      display: flex;
+      justify-content: center;
+      margin: 30px 0;
+    }
+
+    .battery-3d {
+      width: 140px;
+      height: 220px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .battery-3d::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 0 0 8px 8px;
+    }
+
+    .battery-liquid-3d {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(180deg, rgba(0, 255, 255, 0.6) 0%, rgba(0, 255, 255, 0.3) 100%);
+      transition: height 0.8s ease;
+      overflow: hidden;
+    }
+
+    .battery-wave-3d {
+      position: absolute;
+      top: -20px;
+      left: -50%;
+      width: 200%;
+      height: 40px;
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
+      animation: waveMove 4s ease-in-out infinite;
+    }
+
+    .battery-shimmer {
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      animation: shimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0% { left: -100%; }
+      100% { left: 200%; }
+    }
+
+    .battery-percentage-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 32px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+      z-index: 2;
+    }
+
+    .battery-details {
+      margin-top: 24px;
+    }
+
+    .battery-detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 13px;
+    }
+
+    .battery-detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .battery-detail-row span:first-child {
+      color: #9ca3af;
+    }
+
+    .battery-detail-row .highlight {
+      color: #00ffff;
+      font-weight: 600;
+    }
+
+    /* Power Graph */
+    .power-graph {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      height: 120px;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .graph-bar {
+      flex: 1;
+      background: linear-gradient(180deg, #00ffff 0%, #a78bfa 100%);
+      border-radius: 8px 8px 0 0;
+      transition: height 0.5s ease;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+      min-height: 20%;
+    }
+
+    .graph-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #9ca3af;
+    }
+
+    /* Warning Card */
+    .warning-card {
+      background: rgba(255, 200, 0, 0.05) !important;
+      border-color: rgba(255, 200, 0, 0.3) !important;
+    }
+
+    .warning-icon {
+      font-size: 48px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .warning-content h4 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #ffc800;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .warning-content p {
+      font-size: 13px;
+      color: #9ca3af;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .warning-btn {
+      width: 100%;
+      padding: 14px;
+      background: rgba(255, 200, 0, 0.2);
+      border: 1px solid rgba(255, 200, 0, 0.4);
+      border-radius: 12px;
+      color: #ffc800;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .warning-btn:hover {
+      background: rgba(255, 200, 0, 0.3);
+      box-shadow: 0 4px 20px rgba(255, 200, 0, 0.3);
+    }
+
+    /* Activity Timeline */
+    .activity-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .activity-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      transform: translateX(4px);
+    }
+
+    .activity-time {
+      font-size: 11px;
+      color: #9ca3af;
+      font-weight: 600;
+      min-width: 45px;
+    }
+
+    .activity-icon {
+      font-size: 24px;
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 255, 255, 0.1);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .activity-content {
+      flex: 1;
+    }
+
+    .activity-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e0e0e0;
+      margin-bottom: 4px;
+    }
+
+    .activity-desc {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body>
+  <div class="app-container"><!-- Animated Background -->
+   <div class="particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+   </div>
+   <div class="scan-lines"></div><!-- Boot Screen -->
+   <div class="screen active" id="boot-screen">
+    <div class="boot-screen">
+     <div class="logo-container">
+      <div class="logo" id="app-title">
+       SMART EYE X
+      </div>
+     </div>
+     <div class="boot-text" id="boot-text">
+      Initializing AI Vision System...
+     </div>
+     <div class="progress-line">
+      <div class="progress-fill"></div>
+     </div>
+    </div>
+   </div><!-- Dashboard Screen -->
+   <div class="screen" id="home-screen">
+    <div class="header">
+     <div class="header-title">
+      Dashboard
+     </div>
+     <div class="status-badge" id="glasses-status-badge"><span class="status-dot"></span> <span>Connected</span>
+     </div>
+    </div><!-- Dual Battery Status -->
+    <div class="glass-card">
+     <h3 class="card-title">Power Status</h3>
+     <div class="dual-battery">
+      <div class="battery-item">
+       <div class="battery-icon-wrapper">
+        <div class="battery-liquid" style="width: 87%;">
+         <div class="battery-wave"></div>
+        </div>
+        <div class="battery-icon">
+         👓
+        </div>
+       </div>
+       <div class="battery-info">
+        <div class="battery-value">
+         87%
+        </div>
+        <div class="battery-label-small">
+         Glasses
+        </div>
+       </div>
+      </div>
+      <div class="battery-item">
+       <div class="battery-icon-wrapper">
+        <div class="battery-liquid" style="width: 64%;">
+         <div class="battery-wave"></div>
+        </div>
+        <div class="battery-icon">
+         📱
+        </div>
+       </div>
+       <div class="battery-info">
+        <div class="battery-value">
+         64%
+        </div>
+        <div class="battery-label-small">
+         Phone
+        </div>
+       </div>
+      </div>
+     </div>
+    </div><!-- AI Hybrid Status -->
+    <div class="glass-card">
+     <h3 class="card-title">AI System</h3>
+     <div class="ai-hybrid-display">
+      <div class="ai-mode-indicator">
+       <div class="ai-icon-large">
+        🧠
+       </div>
+       <div class="ai-mode-text">
+        Hybrid Mode Active
+       </div>
+       <div class="ai-load-bar">
+        <div class="load-segment local-load" style="width: 35%;"></div>
+        <div class="load-segment cloud-load" style="width: 65%;"></div>
+       </div>
+       <div class="ai-load-labels"><span>Local AI: 35%</span> <span>Cloud AI: 65%</span>
+       </div>
+      </div>
+     </div>
+    </div><!-- Quick Actions -->
+    <div class="glass-card">
+     <h3 class="card-title">Quick Access</h3>
+     <div class="quick-actions">
+      <div class="action-btn" onclick="showScreen('live-status-screen')">
+       <div class="action-icon">
+        📡
+       </div>
+       <div class="action-label">
+        Live Status
+       </div>
+      </div>
+      <div class="action-btn" onclick="showScreen('ai-control-screen')">
+       <div class="action-icon">
+        ⚙️
+       </div>
+       <div class="action-label">
+        AI Control
+       </div>
+      </div>
+      <div class="action-btn" onclick="showScreen('memory-screen')">
+       <div class="action-icon">
+        💾
+       </div>
+       <div class="action-label">
+        Memory
+       </div>
+      </div>
+      <div class="action-btn" onclick="showScreen('activity-screen')">
+       <div class="action-icon">
+        📊
+       </div>
+       <div class="action-label">
+        Activity
+       </div>
+      </div>
+     </div>
+    </div>
+   </div><!-- Live Status Glasses -->
+   <div class="screen" id="live-status-screen">
+    <div class="header">
+     <div class="back-btn" onclick="showScreen('home-screen')">
+      ←
+     </div>
+     <div class="header-title">
+      Live Status
+     </div>
+    </div>
+    <div class="glass-card">
+     <h3 class="card-title">Camera System</h3>
+     <div class="sensor-status">
+      <div class="sensor-item">
+       <div class="sensor-icon active">
+        📷
+       </div>
+       <div class="sensor-info">
+        <div class="sensor-name">
+         Front Camera
+        </div>
+        <div class="sensor-state active">
+         Active
+        </div>
+       </div>
+       <div class="sensor-pulse"></div>
+      </div>
+      <div class="sensor-item">
+       <div class="sensor-icon standby">
+        📹
+       </div>
+       <div class="sensor-info">
+        <div class="sensor-name">
+         Side Camera
+        </div>
+        <div class="sensor-state">
+         Standby
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+    <div class="glass-card">
+     <h3 class="card-title">Sensor Array</h3>
+     <div class="sensor-grid">
+      <div class="sensor-card active">
+       <div class="sensor-icon-small">
+        ❤️
+       </div>
+       <div class="sensor-label">
+        Heart Rate
+       </div>
+       <div class="sensor-reading">
+        72 bpm
+       </div>
+      </div>
+      <div class="sensor-card active">
+       <div class="sensor-icon-small">
+        🎤
+       </div>
+       <div class="sensor-label">
+        Microphone
+       </div>
+       <div class="sensor-reading">
+        Active
+       </div>
+      </div>
+      <div class="sensor-card active">
+       <div class="sensor-icon-small">
+        🧭
+       </div>
+       <div class="sensor-label">
+        Gyroscope
+       </div>
+       <div class="sensor-reading">
+        Tracking
+       </div>
+      </div>
+      <div class="sensor-card">
+       <div class="sensor-icon-small">
+        🌡️
+       </div>
+       <div class="sensor-label">
+        Temperature
+       </div>
+       <div class="sensor-reading">
+        36.5°C
+       </div>
+      </div>
+     </div>
+    </div>
+    <div class="glass-card">
+     <h3 class="card-title">Connection Quality</h3>
+     <div class="connection-bars">
+      <div class="signal-bar active"></div>
+      <div class="signal-bar active"></div>
+      <div class="signal-bar active"></div>
+      <div class="signal-bar active"></div>
+      <div class="signal-bar"></div>
+     </div>
+     <div class="connection-info"><span>Excellent • 5ms latency</span>
+     </div>
+    </div>
+   </div><!-- AI Hybrid Control -->
+   <div class="screen" id="ai-control-screen">
+    <div class="header">
+     <div class="back-btn" onclick="showScreen('home-screen')">
+      ←
+     </div>
+     <div class="header-title">
+      AI Control
+     </div>
+    </div>
+    <div class="glass-card">
+     <h3 class="card-title">AI Mode Selection</h3>
+     <div class="ai-mode-selector">
+      <div class="mode-option active" onclick="selectAIMode(this, 'hybrid')">
+       <div class="mode-radio"></div>
+       <div class="mode-content">
+        <div class="mode-option-title">
+         Hybrid AI
+        </div>
+        <div class="mode-option-desc">
+         Balanced performance &amp; privacy
+        </div>
+       </div>
+      </div>
+      <div class="mode-option" onclick="selectAIMode(this, 'local')">
+       <div class="mode-radio"></div>
+       <div class="mode-content">
+        <div class="mode-option-title">
+         Local AI Only
+        </div>
+        <div class="mode-option-desc">
+         Maximum privacy, limited features
+        </div>
+       </div>
+      </div>
+      <div class="mode-option" onclick="selectAIMode(this, 'cloud')">
+       <div class="mode-radio"></div>
+       <div class="mode-content">
+        <div class="mode-option-title">
+         Cloud AI
+        </div>
+        <div class="mode-option-desc">
+         Full features, requires connection
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+    <div class="glass-card">
+     <h3 class="card-title">AI Workload Distribution</h3>
+     <div class="workload-visual">
+      <div class="workload-circle">
+       <svg viewbox="0 0 100 100" class="workload-svg"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8" /> <circle cx="50" cy="50" r="40" fill="none" stroke="url(#gradient1)" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="163.28" transform="rotate(-90 50 50)" class="progress-circle" /> <defs>
+         <lineargradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#00ffff" />
+          <stop offset="100%" style="stop-color:#a78bfa" />
+         </lineargradient>
+        </defs>
+       </svg>
+       <div class="workload-text">
+        <div class="workload-percent">
+         35%
+        </div>
+        <div class="workload-label">
+         Local
+        </div>
+       </div>
+      </div>
+      <div class="workload-stats">
+       <div class="stat-row"><span class="stat-label">Processing Speed</span> <span class="stat-value">Fast</span>
+       </div>
+       <div class="stat-row"><span class="stat-label">Power Usage</span> <span class="stat-value">Moderate</span>
+       </div>
+       <div class="stat-row"><span class="stat-label">Network Data</span> <span class="stat-value">2.3 MB/h</span>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div><!-- Memory & Data Manager -->
+   <div class="screen" id="memory-screen">
+    <div class="header">
+     <div class="back-btn" onclick="showScreen('home-screen')">
+      ←
+     </div>
+     <div class="header-title">
+      Memory Manager
+     </div>
+    </div>
+    <div class="glass-card">
+     <h3 class="card-title">Face Recognition Database</h3>
+     <div class="memory-stat">
+      <div class="memory-stat-item">
+       <div class="memory-number">
+        247
+       </div>
+       <div class="memory-label">
+        Total Faces
+       </div>
+      </div>
+      <div class="memory-stat-item">
+       <div class="memory-number">
+        1.2 GB
+       </div>
+       <div class="memory-label">
+        Storage Used
+       </div>
+      </div>
+     </div><button class="primary-btn" onclick="showScreen('faces-screen')">Manage Faces</button>
+    </div>
+    <div class="glass-card">
+     <h3 class="card-title">Voice Data</h3>
+     <div class="voice-data-list">
+      <div class="data-item">
+       <div class="data-icon">
+        🔐
+       </div>
+       <div class="data-info">
+        <div class="data-name">
+         Voice PIN
+        </div>
+        <div class="data-meta">
+         Last updated: 3d ago
+        </div>
+       </div>
+       <div class="data-size">
+        2.4 MB
+       </div>
+      </div>
+      <div class="data-item">
+       <div class="data-icon">
+        🎙️
+       </div>
+       <div class="data-info">
+        <div class="data-name">
+         Voice Commands
+        </div>
+        <div class="data-meta">
+         128 samples
+        </div>
+       </div>
+       <div class="data-size">
+        5.1 MB
+       </div>
+      </div>
+     </div>
+    </div>
+    <div class="glass-card">
+     <h3 class="card-title">Sync History</h3>
+     <div class="sync-timeline">
+      <div class="sync-item">
+       <div class="sync-dot"></div>
+       <div class="sync-content">
+        <div class="sync-title">
+         Full Sync Complete
+        </div>
+        <div class="sync-time">
+         2 minutes ago
+        </div>
+       </div>
+      </div>
+      <div class="sync-item">
+       <div class="sync-dot"></div>
+       <div class="sync-content">
+        <div class="sync-title">
+         Face Database Updated
+        </div>
+        <div class="sync-time">
+         1 hour ago
+        </div>
+       </div>
+      </div>
+      <div class="sync-item">
+       <div class="sync-dot"></div>
+       <div class="sync-content">
+        <div class="sync-title">
+         Settings Synced
+        </div>
+        <div class="sync-time">
+         3 hours ago
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div><!-- Automation & Modes -->
+   <div class="screen" id="automation-screen">
+    <div class="header">
+     <div class="back-btn" onclick="showScreen('home-screen')">
+      ←
+     </div>
+     <div class="header-title">
+      Smart Modes
+     </div>
+    </div>
+    <div class="glass-card">
+     <div class="mode-card-large">
+      <div class="mode-card-header">
+       <div class="mode-card-icon">
+        💬
+       </div>
+       <div class="mode-card-title">
+        Whisper Mode
+       </div>
+       <div class="toggle-switch active" onclick="toggleSwitch(this)">
+        <div class="toggle-knob"></div>
+       </div>
+      </div>
+      <div class="mode-card-body">
+       AI berbisik halus langsung ke telinga. Ideal untuk ujian dan meeting.
+      </div>
+      <div class="mode-card-settings">
+       <div class="mode-setting-item"><span>Volume</span>
+        <div class="slider-container"><input type="range" class="mode-slider" min="0" max="100" value="30">
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+    <div class="glass-card">
+     <div class="mode-card-large">
+      <div class="mode-card-header">
+       <div class="mode-card-icon">
+        🧭
+       </div>
+       <div class="mode-card-title">
+        Navigation Mode
+       </div>
+       <div class="toggle-switch" onclick="toggleSwitch(this)">
+        <div class="toggle-knob"></div>
+       </div>
+      </div>
+      <div class="mode-card-body">
+       Panduan AR real-time dengan petunjuk visual dan suara.
+      </div>
+     </div>
+    </div>
+    <div class="glass-card">
+     <div class="mode-card-large">
+      <div class="mode-card-header">
+       <div class="mode-card-icon">
+        📚
+       </div>
+       <div class="mode-card-title">
+        Study Mode
+       </div>
+       <div class="toggle-switch" onclick="toggleSwitch(this)">
+        <div class="toggle-knob"></div>
+       </div>
+      </div>
+      <div class="mode-card-body">
+       OCR otomatis, penjelasan cepat, dan terjemahan instan.
+      </div>
+     </div>
+    </div>
+    <div class="glass-card">
+     <div class="mode-card-large">
+      <div class="mode-card-header">
+       <div class="mode-card-icon">
+        ⚡
+       </div>
+       <div class="mode-card-title">
+        Energy Saver
+       </div>
+       <div class="toggle-switch" onclick="toggleSwitch(this)">
+        <div class="toggle-knob"></div>
+       </div>
+      </div>
+      <div class="mode-card-body">
+       Matikan fitur non-esensial untuk daya tahan maksimal.
+      </div>
+     </div>
+    </div>
+   </div><!-- Battery & Power Intelligence -->
+   <div class="screen" id="battery-screen">
+    <div class="header">
+     <div class="back-btn" onclick="showScreen('home-screen')">
+      ←
+     </div>
+     <div class="header-title">
+      Power Intelligence
+     </div>
+    </div>
+    <div class="glass-card">
+     <h3 class="card-title">Glasses Battery</h3>
+     <div class="battery-3d-container">
+      <div class="battery-3d">
+       <div class="battery-liquid-3d" style="height: 87%;">
+        <div class="battery-wave-3d"></div>
+        <div class="battery-shimmer"></div>
+       </div>
+       <div class="battery-percentage-overlay">
+        87%
+       </div>
+      </div>
+     </div>
+     <div class="battery-details">
+      <div class="battery-detail-row"><span>Estimated Usage</span> <span class="highlight">6h 23m</span>
+      </div>
+      <div class="battery-detail-row"><span>Time to Full Charge</span> <span class="highlight">42 minutes</span>
+      </div>
+      <div class="battery-detail-row"><span>Health</span> <span class="highlight">Excellent (98%)</span>
+      </div>
+     </div>
+    </div>
+    <div class="glass-card">
+     <h3 class="card-title">Power Usage (Last 24h)</h3>
+     <div class="power-graph">
+      <div class="graph-bar" style="height: 45%;"></div>
+      <div class="graph-bar" style="height: 60%;"></div>
+      <div class="graph-bar" style="height: 35%;"></div>
+      <div class="graph-bar" style="height: 70%;"></div>
+      <div class="graph-bar" style="height: 55%;"></div>
+      <div class="graph-bar" style="height: 40%;"></div>
+      <div class="graph-bar" style="height: 65%;"></div>
+     </div>
+     <div class="graph-labels"><span>Mon</span> <span>Tue</span> <span>Wed</span> <span>Thu</span> <span>Fri</span> <span>Sat</span> <span>Sun</span>
+     </div>
+    </div>
+    <div class="glass-card warning-card">
+     <div class="warning-icon">
+      ⚠️
+     </div>
+     <div class="warning-content">
+      <h4>Low Battery Mode Available</h4>
+      <p>Battery at 30%. Enable power saving for extended use.</p>
+     </div><button class="warning-btn">Enable Now</button>
+    </div>
+   </div><!-- Activity Log -->
+   <div class="screen" id="activity-screen">
+    <div class="header">
+     <div class="back-btn" onclick="showScreen('home-screen')">
+      ←
+     </div>
+     <div class="header-title">
+      Activity Log
+     </div>
+    </div>
+    <div class="glass-card">
+     <h3 class="card-title">Today's Activity</h3>
+     <div class="activity-timeline">
+      <div class="activity-item">
+       <div class="activity-time">
+        14:32
+       </div>
+       <div class="activity-icon">
+        👤
+       </div>
+       <div class="activity-content">
+        <div class="activity-title">
+         Face recognized
+        </div>
+        <div class="activity-desc">
+         Alex Chen detected
+        </div>
+       </div>
+      </div>
+      <div class="activity-item">
+       <div class="activity-time">
+        14:18
+       </div>
+       <div class="activity-icon">
+        🔍
+       </div>
+       <div class="activity-content">
+        <div class="activity-title">
+         Text scanned
+        </div>
+        <div class="activity-desc">
+         3 paragraphs translated
+        </div>
+       </div>
+      </div>
+      <div class="activity-item">
+       <div class="activity-time">
+        13:45
+       </div>
+       <div class="activity-icon">
+        🧭
+       </div>
+       <div class="activity-content">
+        <div class="activity-title">
+         Navigation used
+        </div>
+        <div class="activity-desc">
+         Route to Central Park
+        </div>
+       </div>
+      </div>
+      <div class="activity-item">
+       <div class="activity-time">
+        12:20
+       </div>
+       <div class="activity-icon">
+        🎤
+       </div>
+       <div class="activity-content">
+        <div class="activity-title">
+         Voice command
+        </div>
+        <div class="activity-desc">
+         "Show my calendar"
+        </div>
+       </div>
+      </div>
+      <div class="activity-item">
+       <div class="activity-time">
+        11:05
+       </div>
+       <div class="activity-icon">
+        💬
+       </div>
+       <div class="activity-content">
+        <div class="activity-title">
+         Whisper mode activated
+        </div>
+        <div class="activity-desc">
+         Silent assist enabled
+        </div>
+       </div>
+      </div>
+      <div class="activity-item">
+       <div class="activity-time">
+        09:30
+       </div>
+       <div class="activity-icon">
+        🔌
+       </div>
+       <div class="activity-content">
+        <div class="activity-title">
+         Glasses connected
+        </div>
+        <div class="activity-desc">
+         Sync completed
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div><!-- Security Screen -->
+   <div class="screen" id="security-screen">
+    <div class="header">
+     <div class="back-btn" onclick="showScreen('home-screen')">
+      ←
+     </div>
+     <div class="header-title">
+      Security
+     </div>
+    </div>
+    <div class="glass-card">
+     <div class="fingerprint-icon">
+      🔐
+     </div>
+     <div class="voice-wave">
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+     </div>
+     <div class="auth-feedback">
+      Speak your voice PIN to unlock
+     </div>
+    </div><button class="primary-btn">Authenticate with Voice</button>
+   </div><!-- Face Recognition Screen -->
+   <div class="screen" id="faces-screen">
+    <div class="header">
+     <div class="back-btn" onclick="showScreen('home-screen')">
+      ←
+     </div>
+     <div class="header-title">
+      Face Database
+     </div>
+    </div>
+    <div class="face-grid">
+     <div class="face-card">
+      <div class="face-avatar">
+       👤
+      </div>
+      <div class="face-name">
+       Alex Chen
+      </div>
+      <div class="face-meta">
+       Last seen: 2h ago
+      </div>
+      <div class="confidence-bar">
+       <div class="confidence-fill" style="width: 95%;"></div>
+      </div>
+     </div>
+     <div class="face-card">
+      <div class="face-avatar">
+       👤
+      </div>
+      <div class="face-name">
+       Jordan Lee
+      </div>
+      <div class="face-meta">
+       Last seen: 5h ago
+      </div>
+      <div class="confidence-bar">
+       <div class="confidence-fill" style="width: 88%;"></div>
+      </div>
+     </div>
+     <div class="face-card">
+      <div class="face-avatar">
+       👤
+      </div>
+      <div class="face-name">
+       Sam Rivera
+      </div>
+      <div class="face-meta">
+       Last seen: 1d ago
+      </div>
+      <div class="confidence-bar">
+       <div class="confidence-fill" style="width: 92%;"></div>
+      </div>
+     </div>
+     <div class="face-card">
+      <div class="face-avatar">
+       👤
+      </div>
+      <div class="face-name">
+       Taylor Kim
+      </div>
+      <div class="face-meta">
+       Last seen: 3d ago
+      </div>
+      <div class="confidence-bar">
+       <div class="confidence-fill" style="width: 85%;"></div>
+      </div>
+     </div>
+    </div>
+   </div><!-- Settings Screen -->
+   <div class="screen" id="settings-screen">
+    <div class="header">
+     <div class="back-btn" onclick="showScreen('home-screen')">
+      ←
+     </div>
+     <div class="header-title">
+      Settings
+     </div>
+    </div>
+    <div class="glass-card">
+     <div class="settings-item">
+      <div class="settings-left">
+       <div class="settings-icon">
+        🎨
+       </div>
+       <div class="settings-info">
+        <h3>Theme Accent</h3>
+        <p>Customize neon colors</p>
+       </div>
+      </div>
+      <div style="color: #00ffff; font-size: 20px;">
+       →
+      </div>
+     </div>
+     <div class="settings-item">
+      <div class="settings-left">
+       <div class="settings-icon">
+        🔊
+       </div>
+       <div class="settings-info">
+        <h3>Voice Style</h3>
+        <p>AI voice personality</p>
+       </div>
+      </div>
+      <div style="color: #00ffff; font-size: 20px;">
+       →
+      </div>
+     </div>
+     <div class="settings-item">
+      <div class="settings-left">
+       <div class="settings-icon">
+        🌐
+       </div>
+       <div class="settings-info">
+        <h3>Language</h3>
+        <p>English (US)</p>
+       </div>
+      </div>
+      <div style="color: #00ffff; font-size: 20px;">
+       →
+      </div>
+     </div>
+     <div class="settings-item">
+      <div class="settings-left">
+       <div class="settings-icon">
+        🔒
+       </div>
+       <div class="settings-info">
+        <h3>Privacy Mode</h3>
+        <p>Enhanced data protection</p>
+       </div>
+      </div>
+      <div class="toggle-switch active" onclick="toggleSwitch(this)">
+       <div class="toggle-knob"></div>
+      </div>
+     </div>
+     <div class="settings-item">
+      <div class="settings-left">
+       <div class="settings-icon">
+        ✨
+       </div>
+       <div class="settings-info">
+        <h3>Auto Updates</h3>
+        <p>Keep AI models fresh</p>
+       </div>
+      </div>
+      <div class="toggle-switch active" onclick="toggleSwitch(this)">
+       <div class="toggle-knob"></div>
+      </div>
+     </div>
+    </div>
+   </div><!-- Bottom Navigation -->
+   <div class="bottom-nav">
+    <div class="nav-item active" onclick="showScreen('home-screen')">
+     <div class="nav-icon">
+      🏠
+     </div>
+     <div class="nav-label">
+      Home
+     </div>
+    </div>
+    <div class="nav-item" onclick="showScreen('automation-screen')">
+     <div class="nav-icon">
+      🤖
+     </div>
+     <div class="nav-label">
+      Modes
+     </div>
+    </div>
+    <div class="nav-item" onclick="showScreen('battery-screen')">
+     <div class="nav-icon">
+      🔋
+     </div>
+     <div class="nav-label">
+      Power
+     </div>
+    </div>
+    <div class="nav-item" onclick="showScreen('settings-screen')">
+     <div class="nav-icon">
+      ⚙️
+     </div>
+     <div class="nav-label">
+      Settings
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      background_color: '#0a0a0f',
+      glass_surface_color: 'rgba(255, 255, 255, 0.05)',
+      text_color: '#e0e0e0',
+      accent_color: '#00ffff',
+      secondary_accent_color: '#a78bfa',
+      font_family: 'Inter',
+      font_size: 14,
+      app_title: 'SMART EYE X',
+      tagline: 'Initializing AI Vision System...',
+      status_connected: 'Smart Glasses Connected',
+      status_offline: 'Offline',
+      ai_status_message: 'AI ready. Your vision enhanced.'
+    };
+
+    let config = { ...defaultConfig };
+
+    async function onConfigChange(config) {
+      const customFont = config.font_family || defaultConfig.font_family;
+      const baseFontStack = '-apple-system, BlinkMacSystemFont, \'Segoe UI\', system-ui, sans-serif';
+      const baseSize = config.font_size || defaultConfig.font_size;
+      const backgroundColor = config.background_color || defaultConfig.background_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const accentColor = config.accent_color || defaultConfig.accent_color;
+      const secondaryAccent = config.secondary_accent_color || defaultConfig.secondary_accent_color;
+      const glassSurface = config.glass_surface_color || defaultConfig.glass_surface_color;
+
+      document.body.style.fontFamily = `${customFont}, ${baseFontStack}`;
+      document.body.style.fontSize = `${baseSize}px`;
+      document.body.style.color = textColor;
+
+      const appContainer = document.querySelector('.app-container');
+      if (appContainer) {
+        appContainer.style.background = `linear-gradient(135deg, ${backgroundColor} 0%, ${adjustBrightness(backgroundColor, 20)} 100%)`;
+      }
+
+      document.querySelectorAll('.glass-card, .mode-card, .face-card').forEach(card => {
+        card.style.background = glassSurface;
+      });
+
+      document.querySelectorAll('.header-title, .logo').forEach(el => {
+        el.style.background = `linear-gradient(135deg, ${accentColor} 0%, ${secondaryAccent} 100%)`;
+        el.style.webkitBackgroundClip = 'text';
+        el.style.backgroundClip = 'text';
+        el.style.webkitTextFillColor = 'transparent';
+      });
+
+      document.querySelectorAll('.battery-percent, .status-title, .nav-label').forEach(el => {
+        if (el.closest('.nav-item.active')) {
+          el.style.color = accentColor;
+        }
+      });
+
+      document.querySelectorAll('.progress-fill, .confidence-fill, .wave-bar').forEach(el => {
+        el.style.background = `linear-gradient(135deg, ${accentColor} 0%, ${secondaryAccent} 100%)`;
+      });
+
+      document.getElementById('app-title').textContent = config.app_title || defaultConfig.app_title;
+      document.getElementById('boot-text').textContent = config.tagline || defaultConfig.tagline;
+      document.getElementById('connection-status').textContent = config.status_connected || defaultConfig.status_connected;
+      document.getElementById('ai-status').textContent = config.ai_status_message || defaultConfig.ai_status_message;
+
+      document.querySelectorAll('.logo, .header-title').forEach(el => {
+        el.style.fontSize = `${baseSize * 2}px`;
+      });
+      document.querySelectorAll('.status-title, .mode-title').forEach(el => {
+        el.style.fontSize = `${baseSize * 1.1}px`;
+      });
+      document.querySelectorAll('.status-subtitle, .mode-desc, .nav-label').forEach(el => {
+        el.style.fontSize = `${baseSize * 0.85}px`;
+      });
+    }
+
+    function adjustBrightness(color, percent) {
+      const num = parseInt(color.replace('#', ''), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = (num >> 16) + amt;
+      const G = (num >> 8 & 0x00FF) + amt;
+      const B = (num & 0x0000FF) + amt;
+      return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+        (B < 255 ? B < 1 ? 0 : B : 255))
+        .toString(16).slice(1);
+    }
+
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      if (screenId === 'home-screen') document.querySelector('.nav-item:nth-child(1)').classList.add('active');
+      if (screenId === 'automation-screen') document.querySelector('.nav-item:nth-child(2)').classList.add('active');
+      if (screenId === 'battery-screen') document.querySelector('.nav-item:nth-child(3)').classList.add('active');
+      if (screenId === 'settings-screen') document.querySelector('.nav-item:nth-child(4)').classList.add('active');
+    }
+
+    function toggleSwitch(element) {
+      element.classList.toggle('active');
+    }
+
+    function selectAIMode(element, mode) {
+      document.querySelectorAll('.mode-option').forEach(opt => opt.classList.remove('active'));
+      element.classList.add('active');
+    }
+
+    document.querySelectorAll('.mode-card').forEach(card => {
+      card.addEventListener('click', function() {
+        document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    setTimeout(() => {
+      showScreen('home-screen');
+    }, 3000);
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities: (config) => ({
+          recolorables: [
+            {
+              get: () => config.background_color || defaultConfig.background_color,
+              set: (value) => {
+                config.background_color = value;
+                window.elementSdk.setConfig({ background_color: value });
+              }
+            },
+            {
+              get: () => config.glass_surface_color || defaultConfig.glass_surface_color,
+              set: (value) => {
+                config.glass_surface_color = value;
+                window.elementSdk.setConfig({ glass_surface_color: value });
+              }
+            },
+            {
+              get: () => config.text_color || defaultConfig.text_color,
+              set: (value) => {
+                config.text_color = value;
+                window.elementSdk.setConfig({ text_color: value });
+              }
+            },
+            {
+              get: () => config.accent_color || defaultConfig.accent_color,
+              set: (value) => {
+                config.accent_color = value;
+                window.elementSdk.setConfig({ accent_color: value });
+              }
+            },
+            {
+              get: () => config.secondary_accent_color || defaultConfig.secondary_accent_color,
+              set: (value) => {
+                config.secondary_accent_color = value;
+                window.elementSdk.setConfig({ secondary_accent_color: value });
+              }
+            }
+          ],
+          borderables: [],
+          fontEditable: {
+            get: () => config.font_family || defaultConfig.font_family,
+            set: (value) => {
+              config.font_family = value;
+              window.elementSdk.setConfig({ font_family: value });
+            }
+          },
+          fontSizeable: {
+            get: () => config.font_size || defaultConfig.font_size,
+            set: (value) => {
+              config.font_size = value;
+              window.elementSdk.setConfig({ font_size: value });
+            }
+          }
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ['app_title', config.app_title || defaultConfig.app_title],
+          ['tagline', config.tagline || defaultConfig.tagline],
+          ['status_connected', config.status_connected || defaultConfig.status_connected],
+          ['status_offline', config.status_offline || defaultConfig.status_offline],
+          ['ai_status_message', config.ai_status_message || defaultConfig.ai_status_message]
+        ])
+      });
+    }
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b3022bcb6ea893c',t:'MTc2NjU3OTY5Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
