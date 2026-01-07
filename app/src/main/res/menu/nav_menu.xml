@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/nav_home" android:title="Home" />
+    <item android:id="@+id/nav_status" android:title="Status Sistem" />
+    <item android:id="@+id/nav_log" android:title="Log Notifikasi" />
+    <item android:id="@+id/nav_audio" android:title="Audio Control" />
+    <item android:id="@+id/nav_camera" android:title="Camera Control" />
+    <item android:id="@+id/nav_memory" android:title="Memory Center" />
+    <item android:id="@+id/nav_permissions" android:title="Permissions Manager" />
+    <item android:id="@+id/nav_hardware" android:title="Hardware Mode" />
+    <item android:id="@+id/nav_settings" android:title="Settings" />
+</menu>
