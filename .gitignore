@@ -1,18 +1,6 @@
-# Gradle
-.gradle/
-**/.gradle/
-
-# Build output
-/build/
-**/build/
-
-# Android
+*.keystore
+*.jks
 local.properties
-*.iml
-
-# Logs
-*.log
-
-# OS
-.DS_Store
-Thumbs.db
+.env
+.gradle/
+**/build/
