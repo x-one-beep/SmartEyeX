@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "com.smarteyex.app"
-        minSdk 29
+        minSdk 24
         targetSdk 34
         versionCode 1
         versionName "1.0"
@@ -19,15 +19,7 @@ android {
             minifyEnabled false
         }
     }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
 }
 
 dependencies {
-    implementation "androidx.appcompat:appcompat:1.6.1"
-    implementation "androidx.core:core:1.12.0"
-    implementation "com.google.android.material:material:1.11.0"
 }
