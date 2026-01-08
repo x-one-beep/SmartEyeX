@@ -1,2 +1,3 @@
 rootProject.name = "SmartEyeX"
-include ':app'
+include(":app")
+project(":app").projectDir = file("android/app")
