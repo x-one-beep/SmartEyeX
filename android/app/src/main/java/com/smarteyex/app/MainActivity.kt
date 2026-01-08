@@ -1,15 +1,18 @@
 package com.smarteyex.app
 
+import android.app.Activity
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.material3.Text
+import android.widget.TextView
 
-class MainActivity : ComponentActivity() {
+class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            Text("SmartEyeX Ready")
-        }
+
+        val tv = TextView(this)
+        tv.text = "SmartEyeX Active"
+        tv.textSize = 22f
+        tv.setPadding(40, 80, 40, 40)
+
+        setContentView(tv)
     }
 }
