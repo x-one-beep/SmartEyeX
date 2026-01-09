@@ -20,5 +20,7 @@ jobs:
     - name: Grant execute permission
       run: chmod +x gradlew
 
-    - name: Build Debug APK
-      run: ./gradlew :android:assembleDebug
+- name: Build Debug APK
+  run: |
+    chmod +x gradlew
+    ./gradlew :app:assembleDebug
