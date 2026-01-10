@@ -19,15 +19,26 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x android/gradlew
+      - name: Generate Gradle Wrapper
+        working-directory: SmartEyeX_part1
+        run: gradle wrapper
+
+      - name: Grant execute permission
+        working-directory: SmartEyeX_part1
+        run: chmod +x gradlew
+
+      - name: Write secrets file
+        run: |
+          mkdir -p SmartEyeX_part1/app
+          echo "groq=${{ secrets.GROQ_KEY }}" > SmartEyeX_part1/app/secrets.properties
+          echo "weather=${{ secrets.WEATHER_KEY }}" >> SmartEyeX_part1/app/secrets.properties
 
       - name: Build Debug APK
-        working-directory: android
+        working-directory: SmartEyeX_part1
         run: ./gradlew assembleDebug
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: SmartEyeX-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: SmartEyeX_part1/app/build/outputs/apk/debug/*.apk
