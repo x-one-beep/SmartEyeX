@@ -17,20 +17,18 @@ jobs:
 
 - name: Write secrets file
   run: |
-    mkdir -p SmartEyeX_part1/app
-    cat > SmartEyeX_part1/app/secrets.properties <<EOS
-    groq=${{ secrets.GROQ_KEY }}
-    weather=${{ secrets.WEATHER_KEY }}
-    EOS
-
+    mkdir -p app
+    cat > app/secrets.properties <<EOS
+groq=${{ secrets.GROQ_KEY }}
+weather=${{ secrets.WEATHER_KEY }}
+EOS
 - name: Build with Gradle (assembleDebug)
   uses: gradle/gradle-build-action@v2
   with:
     arguments: assembleDebug
-    working-directory: SmartEyeX_part1
 
 - name: Upload APK artifact
   uses: actions/upload-artifact@v4
   with:
     name: smarteyex-debug-apk
-    path: SmartEyeX_part1/app/build/outputs/**/*.apk
+    path: app/build/outputs/**/*.apk
