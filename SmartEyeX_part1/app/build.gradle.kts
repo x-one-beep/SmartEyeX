@@ -1,67 +1,87 @@
 import java.util.Properties
+
 plugins {
- id("com.android.application")
- kotlin("android")
- kotlin("kapt")
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.kapt")
 }
+
 val secretsProps = Properties().apply {
- val f = rootProject.file("app/secrets.properties")
- if (f.exists()) f.inputStream().use { load(it) }
+    val f = rootProject.file("app/secrets.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
 }
+
 android {
- namespace = "com.smarteyex.core"
- compileSdk = 34
-defaultConfig {
-    applicationId = "com.smarteyex.core"
-    minSdk = 29
-    targetSdk = 34
-    versionCode = 1
-    versionName = "1.0"
-    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    namespace = "com.smarteyex.core"
+    compileSdk = 34
 
-    buildConfigField("String", "GROQ_KEY", "\"${secretsProps.getProperty("groq") ?: ""}\"")
-    buildConfigField("String", "WEATHER_KEY", "\"${secretsProps.getProperty("weather") ?: ""}\"")
-}
+    defaultConfig {
+        applicationId = "com.smarteyex.core"
+        minSdk = 29
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
 
-buildFeatures {
-    viewBinding = true
-}
-
-compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
-kotlinOptions {
-    jvmTarget = "17"
-}
-
-buildTypes {
-    debug {
-        isMinifyEnabled = false
+        buildConfigField(
+            "String",
+            "GROQ_KEY",
+            "\"${secretsProps.getProperty("groq") ?: ""}\""
+        )
+        buildConfigField(
+            "String",
+            "WEATHER_KEY",
+            "\"${secretsProps.getProperty("weather") ?: ""}\""
+        )
     }
-    release {
-        isMinifyEnabled = false
+
+    buildFeatures {
+        viewBinding = true
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    buildTypes {
+        debug {
+            isMinifyEnabled = false
+        }
+        release {
+            isMinifyEnabled = false
+        }
     }
 }
-// CameraX
-implementation("androidx.camera:camera-core:1.3.2")
-implementation("androidx.camera:camera-camera2:1.3.2")
-implementation("androidx.camera:camera-lifecycle:1.3.2")
-implementation("androidx.camera:camera-view:1.3.2")
 
-// Lifecycle + Coroutines
-implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.3")
-implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+dependencies {
+    // Core
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.11.0")
 
-// Room (will be used in part 2)
-implementation("androidx.room:room-runtime:2.6.1")
-kapt("androidx.room:room-compiler:2.6.1")
-implementation("androidx.room:room-ktx:2.6.1")
+    // CameraX (REAL-TIME VIDEO)
+    implementation("androidx.camera:camera-core:1.3.2")
+    implementation("androidx.camera:camera-camera2:1.3.2")
+    implementation("androidx.camera:camera-lifecycle:1.3.2")
+    implementation("androidx.camera:camera-view:1.3.2")
 
-// TTS / Preferences / Work (part 2 will use)
-implementation("androidx.preference:preference-ktx:1.2.0")
-implementation("androidx.work:work-runtime-ktx:2.8.1")
+    // Lifecycle & Coroutines
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-// Lottie (HUD animations, part 2 will include JSON)
-implementation("com.airbnb.android:lottie:5.2.0")
+    // Room (memory AI / history)
+    implementation("androidx.room:room-runtime:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+
+    // Preferences, WorkManager
+    implementation("androidx.preference:preference-ktx:1.2.0")
+    implementation("androidx.work:work-runtime-ktx:2.8.1")
+
+    // Lottie (HUD / animasi futuristik)
+    implementation("com.airbnb.android:lottie:5.2.0")
 }
