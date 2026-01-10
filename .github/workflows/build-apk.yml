@@ -1,4 +1,4 @@
-name: Build SmartEyeX Debug APK
+name: Build SmartEyeX (Gradle)
 
 on:
   push:
@@ -24,15 +24,10 @@ jobs:
           mkdir -p android/app
           echo "groq=${{ secrets.GROQ_KEY }}" > android/app/secrets.properties
           echo "weather=${{ secrets.WEATHER_KEY }}" >> android/app/secrets.properties
+
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
 
-      - name: Build Debug APK
+      - name: Build with Gradle
         working-directory: android
-        run: ./gradlew assembleDebug
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: SmartEyeX-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+        run: ./gradlew build
