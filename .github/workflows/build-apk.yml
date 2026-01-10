@@ -1,8 +1,8 @@
-name: Build SmartEyeX Debug APK
+name: Build SmartEyeX APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -10,35 +10,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: 17
 
-      - name: Generate Gradle Wrapper
-        working-directory: SmartEyeX_part1
-        run: gradle wrapper
-
-      - name: Grant execute permission
-        working-directory: SmartEyeX_part1
-        run: chmod +x gradlew
-
-      - name: Write secrets file
+      - name: Generate Gradle Wrapper (SAFE)
         run: |
-          mkdir -p SmartEyeX_part1/app
-          echo "groq=${{ secrets.GROQ_KEY }}" > SmartEyeX_part1/app/secrets.properties
-          echo "weather=${{ secrets.WEATHER_KEY }}" >> SmartEyeX_part1/app/secrets.properties
+          gradle wrapper --gradle-version 8.6
+          chmod +x gradlew
+
+      - name: Create secrets file
+        run: |
+          mkdir -p app
+          echo "groq=${{ secrets.GROQ_KEY }}" > app/secrets.properties
+          echo "weather=${{ secrets.WEATHER_KEY }}" >> app/secrets.properties
 
       - name: Build Debug APK
-        working-directory: SmartEyeX_part1
-        run: ./gradlew assembleDebug
+        run: |
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: SmartEyeX-debug-apk
-          path: SmartEyeX_part1/app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/*.apk
