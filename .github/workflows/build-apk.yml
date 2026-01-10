@@ -1,8 +1,8 @@
-name: Build SmartEyeX (Gradle)
+name: Build SmartEyeX Debug APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -19,15 +19,15 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Write secrets file
-        run: |
-          mkdir -p android/app
-          echo "groq=${{ secrets.GROQ_KEY }}" > android/app/secrets.properties
-          echo "weather=${{ secrets.WEATHER_KEY }}" >> android/app/secrets.properties
-
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
 
-      - name: Build with Gradle
+      - name: Build Debug APK
         working-directory: android
-        run: ./gradlew build
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartEyeX-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
