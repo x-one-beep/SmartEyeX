@@ -21,7 +21,6 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField(
@@ -38,7 +37,7 @@ android {
 
     buildFeatures {
         viewBinding = true
-buildConfig = true
+        buildConfig = true
     }
 
     compileOptions {
@@ -60,8 +59,13 @@ buildConfig = true
     }
 }
 
-dependencies {
+// ✅ Repositories harus ada supaya Gradle nemu semua AndroidX
+repositories {
+    google()
+    mavenCentral()
+}
 
+dependencies {
     // CameraX
     implementation("androidx.camera:camera-core:1.3.2")
     implementation("androidx.camera:camera-camera2:1.3.2")
