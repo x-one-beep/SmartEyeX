@@ -1,29 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
-<resources
+    <style name="Theme.SmartEyeX"
+        parent="Theme.MaterialComponents.DayNight.DarkActionBar">
 
-xmlns:tools="http://schemas.android.com/tools">
+        <item name="colorPrimary">@color/purple_500</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="android:statusBarColor" tools:targetApi="l">
+            @color/purple_700
+        </item>
 
-<style name="Theme. SmartEyeX"
-
-parent="Theme. Material Components.DayNight.DarkActi
-
-onBar">
-
-<item
-
-name="colorPrimary">@color/purple_500</item>
-
-<item
-
-name="colorOnPrimary">@android:color/white</item>
-
-<item
-
-name="android:statusBarColor">@color/purple_700<
-
-/item>
-
-</style>
+    </style>
 
 </resources>
-
