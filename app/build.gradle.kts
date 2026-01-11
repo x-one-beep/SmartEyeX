@@ -59,12 +59,6 @@ android {
     }
 }
 
-// ✅ Repositories harus ada supaya Gradle nemu semua AndroidX
-repositories {
-    google()
-    mavenCentral()
-}
-
 dependencies {
     // CameraX
     implementation("androidx.camera:camera-core:1.3.2")
