@@ -51,10 +51,12 @@ android {
 
     buildTypes {
     debug {
-        signingConfig = signingConfigs.getByName("release")
+        isMinifyEnabled = false
     }
     release {
-        signingConfig = signingConfigs.getByName("release")
+        isMinifyEnabled = false
+        // JANGAN PAKAI signingConfigs.release
+        // DEBUG KEY AJA DULU
     }
 }
 }
