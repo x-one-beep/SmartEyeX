@@ -50,13 +50,13 @@ android {
     }
 
     buildTypes {
-        debug {
-            isMinifyEnabled = false
-        }
-        release {
-            isMinifyEnabled = false
-        }
+    debug {
+        signingConfig = signingConfigs.getByName("release")
     }
+    release {
+        signingConfig = signingConfigs.getByName("release")
+    }
+}
 }
 
 dependencies {
