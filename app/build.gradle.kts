@@ -78,7 +78,7 @@ implementation("androidx.activity:activity-ktx:1.9.0")
     // Preference & WorkManager
     implementation("androidx.preference:preference-ktx:1.2.0")
     implementation("androidx.work:work-runtime-ktx:2.8.1")
-
+implementation("com.google.android.material:material:1.11.0")
     // Lottie
     implementation("com.airbnb.android:lottie:5.2.0")
 }
