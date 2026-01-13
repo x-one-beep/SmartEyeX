@@ -4,10 +4,7 @@ import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import kotlin.math.abs
-/
-Lightweight motion detector based on average luma difference between consecutive frames.
-Tune threshold for your device/environment.
- /
+
 class MotionAnalyzer(
  private val threshold: Double = 10.0,
  private val consecutiveRequired: Int = 1,
