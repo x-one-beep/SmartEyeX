@@ -1,10 +1,13 @@
- package com.smarteyex.core.data
+package com.smarteyex.core.data
 
 import androidx.room.Entity
-
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "events")
-
-data class Event( @PrimaryKey(autoGenerate = true) val id: Long = 0, val time: Long, ) val type: String, val data: String
-
+data class Event(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val time: Long,
+    val type: String,
+    val data: String
+)
