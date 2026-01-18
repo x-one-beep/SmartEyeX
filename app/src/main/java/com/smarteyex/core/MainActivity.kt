@@ -20,7 +20,12 @@ import com.smarteyex.core.clock.ClockManager;
 public class MainActivity extends AppCompatActivity {
 
     private ClockManager clockManager;
+private lateinit var voiceEngine: VoiceEngine
+    voiceEngine = VoiceEngine(this)
 
+voiceEngine.speak(
+    "Smart Eye X aktif. Sistem siap digunakan, Bung."
+)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
