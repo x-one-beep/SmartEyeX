@@ -1,61 +1,105 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/root"
+<?xml version="1.0" encoding="utf-8"?><androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent" tools:context=".MainActivity">
+
+<!-- SPLASH / LOADING -->
+<FrameLayout
+    android:id="@+id/splash_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:background="#0B1020">
+
+    <TextView
+        android:id="@+id/logo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="SmartEyeX"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        android:textColor="#7C4DFF" />
+</FrameLayout>
+
+<!-- START SCREEN -->
+<FrameLayout
+    android:id="@+id/start_container"
+    android:visibility="gone"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0B1020">
+
+    <Button
+        android:id="@+id/btn_start"
+        android:layout_width="200dp"
+        android:layout_height="56dp"
+        android:layout_gravity="center"
+        android:text="MULAI"
+        android:textAllCaps="true" />
+</FrameLayout>
+
+<!-- DASHBOARD -->
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    android:id="@+id/dashboard_container"
+    android:visibility="gone"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
         android:title="SmartEyeX"
-        android:titleTextColor="@android:color/white" />
+        android:background="?attr/colorPrimary" />
 
-    <!-- CONTAINER CAMERA (WAJIB SAMA) -->
+    <!-- CAMERA + HUD -->
     <FrameLayout
         android:id="@+id/camera_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="?attr/actionBarSize">
 
-        <!-- HUD FLOATING -->
-        <FrameLayout
-            android:id="@+id/floatingHudContainer"
+        <!-- CLOCK -->
+        <TextView
+            android:id="@+id/tv_clock"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
-            android:layout_gravity="top|end" />
+            android:text="00:00"
+            android:textSize="24sp"
+            android:textColor="#03DAC5" />
 
-        <!-- KONTROL BAWAH -->
+        <!-- AI PANEL -->
+        <TextView
+            android:id="@+id/tv_ai_response"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:padding="16dp"
+            android:text="AI Standby"
+            android:textColor="@android:color/white" />
+
+        <!-- CONTROLS -->
         <LinearLayout
             android:id="@+id/kontrol_bawah"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
             android:orientation="horizontal"
-            android:padding="12dp"
-            android:layout_gravity="bottom|center_horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="8dp">
+            android:gravity="center"
+            android:padding="12dp">
 
             <Button
                 android:id="@+id/btnToggleObserve"
+                android:text="Observe"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/btn_observe" />
+                android:layout_height="wrap_content" />
 
             <Button
                 android:id="@+id/btnMemory"
+                android:text="Memory"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:text="@string/btn_memory" />
-
+                android:layout_marginStart="12dp" />
         </LinearLayout>
-
     </FrameLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
