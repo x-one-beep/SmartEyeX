@@ -13,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import androidx.camera.view.PreviewView;
+import com.yourpackage.smarteyex.camera.CameraController;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnMemory;
     private TextView tvClock;
     private TextView tvAiResponse;
-
+private CameraController cameraController;
     // Handler
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
@@ -67,7 +69,15 @@ public class MainActivity extends AppCompatActivity {
             startContainer.setVisibility(View.VISIBLE);
         }, 2000); // 2 detik splash
     }
+PreviewView previewView = findViewById(R.id.previewView);
 
+cameraController = new CameraController(
+        this,
+        this,
+        previewView
+);
+
+cameraController.startCamera();
     // =========================
     // CLOCK REALTIME
     // =========================
