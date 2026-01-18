@@ -143,3 +143,9 @@ cameraController.startCamera();
         });
     }
 }
+val groqAi = GroqAiEngine(this, ttsManager)
+
+lifecycleScope.launch {
+    val jawaban = groqAi.ask("Halo SmartEyeX")
+    binding.tvAiResponse.text = jawaban
+}
