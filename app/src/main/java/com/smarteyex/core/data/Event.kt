@@ -3,7 +3,7 @@ package com.smarteyex.core.data
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "events")
+@Entity
 data class Event(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

@@ -2,41 +2,22 @@ package com.smarteyex.core.tts
 
 import android.content.Context
 import android.speech.tts.TextToSpeech
-import android.util.Log
-import java.util.Locale
+import java.util.*
 
-class TextToSpeechManager(private val ctx: Context) {
+class TextToSpeechManager(context: Context) {
 
-    private var tts: TextToSpeech? = null
-
-    init {
-        tts = TextToSpeech(ctx) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                try {
-                    tts?.language = Locale("id", "ID")
-                    tts?.setSpeechRate(0.95f)
-                } catch (t: Throwable) {
-                    Log.w("TTS", "setLanguage failed: ${t.message}")
-                }
-            } else {
-                Log.w("TTS", "init failed")
-            }
+    private val tts = TextToSpeech(context) { status ->
+        if (status == TextToSpeech.SUCCESS) {
+            tts.language = Locale("id", "ID")
         }
     }
 
     fun speak(text: String) {
-        try {
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "SmartEyeXUtterance")
-        } catch (t: Throwable) {
-            Log.w("TTS", "speak failed: ${t.message}")
-        }
+        tts.speak(text, TextToSpeech.QUEUE_ADD, null, null)
     }
 
     fun shutdown() {
-        try {
-            tts?.stop()
-            tts?.shutdown()
-        } catch (_: Exception) {
-        }
+        tts.stop()
+        tts.shutdown()
     }
 }

@@ -2,53 +2,37 @@ package com.smarteyex.core.wa
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.speech.tts.TextToSpeech
+import android.content.Context
 import android.util.Log
-import com.smarteyex.core.data.AppDatabase
-import com.smarteyex.core.data.Event
-import com.smarteyex.core.tts.TextToSpeechManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import java.util.*
 
-class WaListenerService : NotificationListenerService() {
+class WaNotificationListener : NotificationListenerService() {
 
-    private lateinit var tts: TextToSpeechManager
+    private var tts: TextToSpeech? = null
 
     override fun onCreate() {
         super.onCreate()
-        tts = TextToSpeechManager(this)
+        tts = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) tts?.language = Locale("id", "ID")
+        }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-
-        val packageName = sbn.packageName
-        if (packageName != "com.whatsapp") return
-
-        val extras = sbn.notification.extras
-        val sender = extras.getString("android.title") ?: "Unknown"
-        val message = extras.getCharSequence("android.text")?.toString() ?: return
-
-        Log.d("SmartEyeX-WA", "WA dari $sender: $message")
-
-        // 🔊 SPEAK
-        tts.speak("Bung, pesan WhatsApp dari $sender. Isinya: $message")
-
-        // 🧠 SAVE MEMORY
-        CoroutineScope(Dispatchers.IO).launch {
-            AppDatabase.getInstance(applicationContext)
-                .eventDao()
-                .insert(
-                    Event(
-                        time = System.currentTimeMillis(),
-                        type = "WHATSAPP",
-                        data = "From $sender: $message"
-                    )
-                )
+        val pack = sbn.packageName
+        if (pack.contains("com.whatsapp")) {
+            val msg = sbn.notification.extras.getString("android.text") ?: "WA masuk"
+            speakWA(msg)
         }
+    }
+
+    private fun speakWA(text: String) {
+        tts?.speak("Bung X, ada WA: $text", TextToSpeech.QUEUE_ADD, null, null)
+        Log.d("WA_LISTENER", text)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        tts.shutdown()
+        tts?.shutdown()
     }
 }

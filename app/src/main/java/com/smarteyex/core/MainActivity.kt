@@ -1,151 +1,167 @@
-package com.yourpackage.smarteyex;
+package com.smarteyex.core
 
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.view.View;
-import android.widget.Button;
-import android.widget.FrameLayout;
-import android.widget.TextView;
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import android.view.LayoutInflater
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import com.smarteyex.core.ai.GroqAIEngine
+import com.smarteyex.core.camera.CameraFragment
+import com.smarteyex.core.clock.ClockManager
+import com.smarteyex.core.data.AppDatabase
+import com.smarteyex.core.data.Event
+import com.smarteyex.core.tts.TextToSpeechManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-import androidx.appcompat.app.AppCompatActivity;
+class MainActivity : AppCompatActivity() {
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import androidx.camera.view.PreviewView;
-import com.yourpackage.smarteyex.camera.CameraController;
-import com.smarteyex.core.clock.ClockManager;
+    private lateinit var tts: TextToSpeechManager
+    private lateinit var groqAI: GroqAIEngine
+    private lateinit var clockManager: ClockManager
 
-public class MainActivity extends AppCompatActivity {
+    private var lastMotionTime = 0L
+    private val motionCooldown = 3000L
 
-    private ClockManager clockManager;
-private lateinit var voiceEngine: VoiceEngine
-    voiceEngine = VoiceEngine(this)
-
-voiceEngine.speak(
-    "Smart Eye X aktif. Sistem siap digunakan, Bung."
-)
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        TextView tvClock = findViewById(R.id.tv_clock);
-        clockManager = new ClockManager(this, tvClock);
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { perms ->
+        if (perms[Manifest.permission.CAMERA] == true && perms[Manifest.permission.RECORD_AUDIO] == true) {
+            startCamera()
+        } else {
+            Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+        }
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        clockManager.start();
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        tts = TextToSpeechManager(this)
+        groqAI = GroqAIEngine(this)
+        clockManager = ClockManager(this, findViewById(R.id.tv_clock))
+
+        // Splash -> Start
+        Handler(Looper.getMainLooper()).postDelayed({
+            findViewById<android.view.View>(R.id.splash_container).visibility = android.view.View.GONE
+            findViewById<android.view.View>(R.id.start_container).visibility = android.view.View.VISIBLE
+        }, 2000)
+
+        findViewById<android.widget.Button>(R.id.btn_start).setOnClickListener {
+            findViewById<android.view.View>(R.id.start_container).visibility = android.view.View.GONE
+            findViewById<android.view.View>(R.id.dashboard_container).visibility = android.view.View.VISIBLE
+            requestPermissionsIfNeeded()
+            clockManager.start()
+        }
+
+        findViewById<android.widget.Button>(R.id.btnToggleObserve).setOnClickListener {
+            toggleCameraObserve()
+        }
+
+        findViewById<android.widget.Button>(R.id.btnMemory).setOnClickListener {
+            showMemory()
+        }
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        clockManager.stop();
-    }
-}
-public class MainActivity extends AppCompatActivity {
-
-    // UI Containers
-    private FrameLayout splashContainer;
-    private FrameLayout startContainer;
-    private FrameLayout dashboardContainer;
-
-    // UI Elements
-    private Button btnStart;
-    private Button btnObserve;
-    private Button btnMemory;
-    private TextView tvClock;
-    private TextView tvAiResponse;
-private CameraController cameraController;
-    // Handler
-    private final Handler uiHandler = new Handler(Looper.getMainLooper());
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        bindViews();
-        startSplash();
-        startClock();
-        setupActions();
+    private fun requestPermissionsIfNeeded() {
+        val camOk = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        val audOk = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        if (!camOk || !audOk) {
+            permissionLauncher.launch(arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO))
+        } else startCamera()
     }
 
-    // =========================
-    // INIT UI
-    // =========================
-    private void bindViews() {
-        splashContainer = findViewById(R.id.splash_container);
-        startContainer = findViewById(R.id.start_container);
-        dashboardContainer = findViewById(R.id.dashboard_container);
-
-        btnStart = findViewById(R.id.btn_start);
-        btnObserve = findViewById(R.id.btnToggleObserve);
-        btnMemory = findViewById(R.id.btnMemory);
-
-        tvClock = findViewById(R.id.tv_clock);
-        tvAiResponse = findViewById(R.id.tv_ai_response);
-    }
-
-    // =========================
-    // SPLASH LOGIC
-    // =========================
-    private void startSplash() {
-        uiHandler.postDelayed(() -> {
-            splashContainer.setVisibility(View.GONE);
-            startContainer.setVisibility(View.VISIBLE);
-        }, 2000); // 2 detik splash
-    }
-PreviewView previewView = findViewById(R.id.previewView);
-
-cameraController = new CameraController(
-        this,
-        this,
-        previewView
-);
-
-cameraController.startCamera();
-    // =========================
-    // CLOCK REALTIME
-    // =========================
-    private void startClock() {
-        uiHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                String time = new SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-                        .format(new Date());
-                tvClock.setText(time);
-                uiHandler.postDelayed(this, 1000);
+    private fun startCamera() {
+        val frag = CameraFragment.newInstance()
+        frag.setOnMotionDetectedListener {
+            val now = SystemClock.elapsedRealtime()
+            if (now - lastMotionTime >= motionCooldown) {
+                lastMotionTime = now
+                onMotionDetected()
             }
-        });
+        }
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.camera_container, frag, "CAMERA")
+            .commit()
     }
 
-    // =========================
-    // BUTTON ACTIONS
-    // =========================
-    private void setupActions() {
-
-        btnStart.setOnClickListener(v -> {
-            startContainer.setVisibility(View.GONE);
-            dashboardContainer.setVisibility(View.VISIBLE);
-        });
-
-        btnObserve.setOnClickListener(v -> {
-            tvAiResponse.setText("👁️ Observe mode aktif");
-        });
-
-        btnMemory.setOnClickListener(v -> {
-            tvAiResponse.setText("🧠 Memory dibuka (SmartEyeX 130809)");
-        });
+    private fun toggleCameraObserve() {
+        val frag = supportFragmentManager.findFragmentByTag("CAMERA")
+        if (frag != null) supportFragmentManager.beginTransaction().remove(frag).commit()
+        else startCamera()
     }
-}
-val groqAi = GroqAiEngine(this, ttsManager)
 
-lifecycleScope.launch {
-    val jawaban = groqAi.ask("Halo SmartEyeX")
-    binding.tvAiResponse.text = jawaban
+    private fun onMotionDetected() {
+        showFloatingHud("Movement Detected", "Analyzing...")
+        tts.speak("Ada gerakan terdeteksi, sedang menganalisis")
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val db = AppDatabase.getInstance(applicationContext)
+            db.eventDao().insert(Event(System.currentTimeMillis(), "MOVEMENT", "Motion detected"))
+            val aiResponse = groqAI.analyzeEvent("Movement detected")
+            launch(Dispatchers.Main) {
+                findViewById<TextView>(R.id.tv_ai_response).text = aiResponse
+                tts.speak(aiResponse)
+            }
+        }
+    }
+
+    private fun showMemory() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val db = AppDatabase.getInstance(applicationContext)
+            val events = db.eventDao().getLastEvents(10)
+            launch(Dispatchers.Main) {
+                val msg = if (events.isEmpty()) "No memory" else "Saved ${events.size} items"
+                showFloatingHud("Memory", msg)
+                tts.speak(msg)
+            }
+        }
+    }
+
+    private fun showFloatingHud(title: String, message: String) {
+        val container = findViewById<android.view.View>(R.id.floatingHudContainer) as android.widget.FrameLayout
+        container.removeAllViews()
+        val view = LayoutInflater.from(this).inflate(R.layout.view_floating_notification, container, false)
+        view.findViewById<TextView>(R.id.hud_title).text = title
+        view.findViewById<TextView>(R.id.hud_message).text = message
+        container.addView(view)
+
+        view.apply {
+            alpha = 0f
+            scaleX = 0.92f
+            scaleY = 0.92f
+            animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(300)
+                .setInterpolator(AccelerateDecelerateInterpolator())
+                .withEndAction {
+                    postDelayed({
+                        animate()
+                            .alpha(0f)
+                            .scaleX(0.94f)
+                            .scaleY(0.94f)
+                            .setDuration(300)
+                            .withEndAction { container.removeView(this) }
+                            .start()
+                    }, 3000)
+                }.start()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        tts.shutdown()
+        clockManager.stop()
+    }
 }

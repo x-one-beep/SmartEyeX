@@ -2,19 +2,14 @@ package com.smarteyex.core.data
 
 import androidx.room.Dao
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 
 @Dao
 interface EventDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(event: Event)
+    @Insert
+    suspend fun insert(event: Event)
 
-    @Query(
-        "SELECT * FROM events " +
-        "ORDER BY time DESC " +
-        "LIMIT :limit"
-    )
-    fun getLastEvents(limit: Int): List<Event>
+    @Query("SELECT * FROM Event ORDER BY time DESC LIMIT :limit")
+    suspend fun getLastEvents(limit: Int): List<Event>
 }
