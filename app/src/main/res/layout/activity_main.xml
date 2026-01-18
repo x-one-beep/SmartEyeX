@@ -50,11 +50,11 @@
         android:background="?attr/colorPrimary" />
 
     <!-- CAMERA + HUD -->
-    <FrameLayout
-        android:id="@+id/camera_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="?attr/actionBarSize">
+    <androidx.camera.view.PreviewView
+    android:id="@+id/previewView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:scaleType="fitCenter"/>
 
         <!-- CLOCK -->
         <TextView
