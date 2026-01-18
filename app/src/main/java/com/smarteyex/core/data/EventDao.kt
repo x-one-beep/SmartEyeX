@@ -9,12 +9,12 @@ import androidx.room.Query
 interface EventDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(event: Event)
+    fun insert(event: Event)
 
     @Query(
         "SELECT * FROM events " +
         "ORDER BY time DESC " +
         "LIMIT :limit"
     )
-    suspend fun getLastEvents(limit: Int): List<Event>
+    fun getLastEvents(limit: Int): List<Event>
 }
