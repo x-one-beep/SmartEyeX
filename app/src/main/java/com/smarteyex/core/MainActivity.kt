@@ -1,178 +1,104 @@
-package com.smarteyex.core
+package com.yourpackage.smarteyex;
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Bundle
-import android.os.SystemClock
-import android.view.LayoutInflater
-import android.view.animation.AccelerateDecelerateInterpolator
-import android.widget.TextView
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
-import com.smarteyex.core.data.AppDatabase
-import com.smarteyex.core.data.Event
-import com.smarteyex.core.databinding.ActivityMainBinding
-import com.smarteyex.core.tts.TextToSpeechManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.View;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.TextView;
 
-class MainActivity : AppCompatActivity() {
+import androidx.appcompat.app.AppCompatActivity;
 
-    private lateinit var binding: ActivityMainBinding
-    private lateinit var ttsManager: TextToSpeechManager
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
-    private var lastMotionTime = 0L
-    private val motionCooldownMs = 3000L
+public class MainActivity extends AppCompatActivity {
 
-    private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { perms ->
-        val cameraGranted = perms[Manifest.permission.CAMERA] == true
-        val audioGranted = perms[Manifest.permission.RECORD_AUDIO] == true
+    // UI Containers
+    private FrameLayout splashContainer;
+    private FrameLayout startContainer;
+    private FrameLayout dashboardContainer;
 
-        if (cameraGranted && audioGranted) {
-            startCameraFragment()
-        }
+    // UI Elements
+    private Button btnStart;
+    private Button btnObserve;
+    private Button btnMemory;
+    private TextView tvClock;
+    private TextView tvAiResponse;
+
+    // Handler
+    private final Handler uiHandler = new Handler(Looper.getMainLooper());
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        bindViews();
+        startSplash();
+        startClock();
+        setupActions();
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    // =========================
+    // INIT UI
+    // =========================
+    private void bindViews() {
+        splashContainer = findViewById(R.id.splash_container);
+        startContainer = findViewById(R.id.start_container);
+        dashboardContainer = findViewById(R.id.dashboard_container);
 
-        ttsManager = TextToSpeechManager(this)
+        btnStart = findViewById(R.id.btn_start);
+        btnObserve = findViewById(R.id.btnToggleObserve);
+        btnMemory = findViewById(R.id.btnMemory);
 
-        binding.btnToggleObserve.setOnClickListener {
-            val frag = supportFragmentManager.findFragmentByTag("CAMERA")
-            if (frag == null) {
-                startCameraFragment()
-            } else {
-                supportFragmentManager.beginTransaction()
-                    .remove(frag)
-                    .commit()
+        tvClock = findViewById(R.id.tv_clock);
+        tvAiResponse = findViewById(R.id.tv_ai_response);
+    }
+
+    // =========================
+    // SPLASH LOGIC
+    // =========================
+    private void startSplash() {
+        uiHandler.postDelayed(() -> {
+            splashContainer.setVisibility(View.GONE);
+            startContainer.setVisibility(View.VISIBLE);
+        }, 2000); // 2 detik splash
+    }
+
+    // =========================
+    // CLOCK REALTIME
+    // =========================
+    private void startClock() {
+        uiHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                String time = new SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+                        .format(new Date());
+                tvClock.setText(time);
+                uiHandler.postDelayed(this, 1000);
             }
-        }
-
-        binding.btnMemory.setOnClickListener {
-            lifecycleScope.launch(Dispatchers.IO) {
-                val db = AppDatabase.getInstance(applicationContext)
-                val events = db.eventDao().getLastEvents(10)
-
-                runOnUiThread {
-                    showFloatingHud(
-                        "Memory",
-                        if (events.isEmpty()) "No memory saved"
-                        else "Saved ${events.size} items"
-                    )
-                }
-
-                ttsManager.speak(
-                    if (events.isEmpty()) "Tidak ada memori"
-                    else "Tersimpan ${events.size} peristiwa"
-                )
-            }
-        }
-
-        requestPermissionsIfNeeded()
+        });
     }
 
-    private fun requestPermissionsIfNeeded() {
-        val cameraOk = ContextCompat.checkSelfPermission(
-            this, Manifest.permission.CAMERA
-        ) == PackageManager.PERMISSION_GRANTED
+    // =========================
+    // BUTTON ACTIONS
+    // =========================
+    private void setupActions() {
 
-        val audioOk = ContextCompat.checkSelfPermission(
-            this, Manifest.permission.RECORD_AUDIO
-        ) == PackageManager.PERMISSION_GRANTED
+        btnStart.setOnClickListener(v -> {
+            startContainer.setVisibility(View.GONE);
+            dashboardContainer.setVisibility(View.VISIBLE);
+        });
 
-        if (!cameraOk || !audioOk) {
-            permissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.CAMERA,
-                    Manifest.permission.RECORD_AUDIO
-                )
-            )
-        } else {
-            startCameraFragment()
-        }
-    }
+        btnObserve.setOnClickListener(v -> {
+            tvAiResponse.setText("👁️ Observe mode aktif");
+        });
 
-    private fun startCameraFragment() {
-        val fragment = CameraFragment.newInstance().apply {
-            setOnMotionDetectedListener {
-                val now = SystemClock.elapsedRealtime()
-                if (now - lastMotionTime >= motionCooldownMs) {
-                    lastMotionTime = now
-                    onMotionDetected()
-                }
-            }
-        }
-
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.camera_container, fragment, "CAMERA")
-            .commit()
-    }
-
-    private fun onMotionDetected() {
-        showFloatingHud("Movement Detected", "Analyzing...")
-
-        ttsManager.speak(
-            "Bung, ada gerakan terdeteksi. Saya sedang menganalisis."
-        )
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            val db = AppDatabase.getInstance(applicationContext)
-            db.eventDao().insert(
-                Event(
-                    time = System.currentTimeMillis(),
-                    type = "MOVEMENT",
-                    data = "Motion detected by camera analyzer"
-                )
-            )
-        }
-    }
-
-    private fun showFloatingHud(title: String, message: String) {
-        val container = binding.floatingHudContainer
-        container.removeAllViews()
-
-        val view = LayoutInflater.from(this)
-            .inflate(R.layout.view_floating_notification, container, false)
-
-        view.findViewById<TextView>(R.id.hud_title).text = title
-        view.findViewById<TextView>(R.id.hud_message).text = message
-
-        container.addView(view)
-
-        view.apply {
-            alpha = 0f
-            scaleX = 0.92f
-            scaleY = 0.92f
-            animate()
-                .alpha(1f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .setDuration(300)
-                .setInterpolator(AccelerateDecelerateInterpolator())
-                .withEndAction {
-                    postDelayed({
-                        animate()
-                            .alpha(0f)
-                            .scaleX(0.94f)
-                            .scaleY(0.94f)
-                            .setDuration(300)
-                            .withEndAction { container.removeView(this) }
-                            .start()
-                    }, 3000)
-                }
-                .start()
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        ttsManager.shutdown()
+        btnMemory.setOnClickListener(v -> {
+            tvAiResponse.setText("🧠 Memory dibuka (SmartEyeX 130809)");
+        });
     }
 }
