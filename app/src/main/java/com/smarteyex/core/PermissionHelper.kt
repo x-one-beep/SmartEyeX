@@ -11,7 +11,7 @@ import android.provider.Settings;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
+import com.yourpackage.smarteyex.utils.PermissionHelper;
 public class PermissionHelper {
 
     public static final int PERMISSION_CODE = 130809;
@@ -21,7 +21,11 @@ public class PermissionHelper {
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.READ_EXTERNAL_STORAGE
     };
+if (!PermissionHelper.hasAllPermissions(this)) {
+    PermissionHelper.requestAllPermissions(this);
+}
 
+PermissionHelper.requestIgnoreBatteryOptimization(this);
     public static boolean hasAllPermissions(Activity activity) {
         for (String permission : REQUIRED_PERMISSIONS) {
             if (ContextCompat.checkSelfPermission(activity, permission)
