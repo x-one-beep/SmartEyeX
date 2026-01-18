@@ -8,6 +8,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.view.LayoutInflater
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -46,6 +47,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Init core modules
         tts = TextToSpeechManager(this)
         groqAI = GroqAIEngine(this)
         clockManager = ClockManager(this, findViewById(R.id.tv_clock))
@@ -56,6 +58,7 @@ class MainActivity : AppCompatActivity() {
             findViewById<android.view.View>(R.id.start_container).visibility = android.view.View.VISIBLE
         }, 2000)
 
+        // Button listeners
         findViewById<android.widget.Button>(R.id.btn_start).setOnClickListener {
             findViewById<android.view.View>(R.id.start_container).visibility = android.view.View.GONE
             findViewById<android.view.View>(R.id.dashboard_container).visibility = android.view.View.VISIBLE
@@ -106,10 +109,12 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             val db = AppDatabase.getInstance(applicationContext)
-            db.eventDao().insert(Event(System.currentTimeMillis(), "MOVEMENT", "Motion detected"))
+            // Event safe dengan tipe Long dan String
+            db.eventDao().insert(Event(timestamp = System.currentTimeMillis(), type = "MOVEMENT", data = "Motion detected"))
+
             val aiResponse = groqAI.analyzeEvent("Movement detected")
             launch(Dispatchers.Main) {
-                findViewById<TextView>(R.id.tv_ai_response).text = aiResponse
+                findViewById<TextView>(R.id.tv_ai_response)?.text = aiResponse
                 tts.speak(aiResponse)
             }
         }
@@ -128,11 +133,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showFloatingHud(title: String, message: String) {
-        val container = findViewById<android.view.View>(R.id.floatingHudContainer) as android.widget.FrameLayout
+        val container = findViewById<FrameLayout>(R.id.floatingHudContainer)
         container.removeAllViews()
         val view = LayoutInflater.from(this).inflate(R.layout.view_floating_notification, container, false)
-        view.findViewById<TextView>(R.id.hud_title).text = title
-        view.findViewById<TextView>(R.id.hud_message).text = message
+        view.findViewById<TextView>(R.id.hud_title)?.text = title
+        view.findViewById<TextView>(R.id.hud_message)?.text = message
         container.addView(view)
 
         view.apply {
