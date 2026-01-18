@@ -15,7 +15,33 @@ import java.util.Date;
 import java.util.Locale;
 import androidx.camera.view.PreviewView;
 import com.yourpackage.smarteyex.camera.CameraController;
+import com.smarteyex.core.clock.ClockManager;
 
+public class MainActivity extends AppCompatActivity {
+
+    private ClockManager clockManager;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        TextView tvClock = findViewById(R.id.tv_clock);
+        clockManager = new ClockManager(this, tvClock);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        clockManager.start();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        clockManager.stop();
+    }
+}
 public class MainActivity extends AppCompatActivity {
 
     // UI Containers
