@@ -59,6 +59,15 @@
             </intent-filter>
         </service>
 
+        <service
+    android:name=".wa.WaListenerService"
+    android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+    android:exported="true">
+    <intent-filter>
+        <action android:name="android.service.notification.NotificationListenerService" />
+    </intent-filter>
+</service>
+
         <!-- ===== BOOT RECEIVER (SIAP BACKGROUND AUTO START) ===== -->
         <receiver
             android:name=".receiver.BootReceiver"
