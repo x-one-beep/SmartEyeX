@@ -50,28 +50,30 @@ android {
     }
 
     buildTypes {
-    debug {
-        isMinifyEnabled = false
-    }
-    release {
-        isMinifyEnabled = false
-        // JANGAN PAKAI signingConfigs.release
-        // DEBUG KEY AJA DULU
+        debug {
+            isMinifyEnabled = false
+        }
+        release {
+            isMinifyEnabled = false
+            // DEBUG key dulu, signing nanti
+        }
     }
 }
-}
+
+val cameraxVersion = "1.3.2"
 
 dependencies {
     // CameraX
-    implementation("androidx.camera:camera-core:1.3.2")
-    implementation("androidx.camera:camera-camera2:1.3.2")
-    implementation("androidx.camera:camera-lifecycle:1.3.2")
-    implementation("androidx.camera:camera-view:1.3.2")
+    implementation("androidx.camera:camera-core:$cameraxVersion")
+    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
 
     // Lifecycle + Coroutines
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-implementation("androidx.activity:activity-ktx:1.9.0")
+    implementation("androidx.activity:activity-ktx:1.9.0")
+
     // Room
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
@@ -80,18 +82,8 @@ implementation("androidx.activity:activity-ktx:1.9.0")
     // Preference & WorkManager
     implementation("androidx.preference:preference-ktx:1.2.0")
     implementation("androidx.work:work-runtime-ktx:2.8.1")
-implementation("com.google.android.material:material:1.11.0")
-    // Lottie
+    
+    // Material + Lottie
+    implementation("com.google.android.material:material:1.11.0")
     implementation("com.airbnb.android:lottie:5.2.0")
-}
-
-dependencies {
-
-    def camerax_version = "1.3.2"
-
-    implementation "androidx.camera:camera-core:$camerax_version"
-    implementation "androidx.camera:camera-camera2:$camerax_version"
-    implementation "androidx.camera:camera-lifecycle:$camerax_version"
-    implementation "androidx.camera:camera-view:$camerax_version"
-
 }
