@@ -1,178 +1,215 @@
-package com.smarteyex.core
+package com.smarteyex.app
 
-import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.*
-import android.view.LayoutInflater
-import android.view.animation.AccelerateDecelerateInterpolator
-import android.widget.*
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
-import com.smarteyex.core.ai.GroqAIEngine
-import com.smarteyex.core.camera.CameraFragment
-import com.smarteyex.core.clock.ClockManager
-import com.smarteyex.core.data.AppDatabase
-import com.smarteyex.core.data.Event
-import com.smarteyex.core.tts.TextToSpeechManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import android.os.Bundle
+import android.os.Handler
 import android.view.View
+import android.widget.*
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import com.smarteyex.core.ClockManager
+import com.smarteyex.core.GroqAiEngine
+import com.smarteyex.core.VoiceEngine
+import com.smarteyex.app.camera.CameraController
+import com.smarteyex.app.memory.MemoryManager
+import com.smarteyex.app.smart.SmartMode
+import com.smarteyex.app.wa.WaNotificationListener
+import com.smarteyex.app.util.PermissionHelper
+import java.util.*
+
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var tts: TextToSpeechManager
-    private lateinit var groqAI: GroqAIEngine
+    // ===== UI =====
+    private lateinit var txtClock: TextView
+    private lateinit var txtDate: TextView
+    private lateinit var statusCamera: TextView
+    private lateinit var statusSound: TextView
+    private lateinit var statusAI: TextView
+    private lateinit var miniHud: TextView
+    private lateinit var etChat: EditText
+    private lateinit var btnMic: ImageButton
+    private lateinit var btnSend: ImageButton
+    private lateinit var chatContainer: LinearLayout
+    private lateinit var btnDashboard: Button
+    private lateinit var btnCamera: Button
+    private lateinit var btnMemory: Button
+    private lateinit var btnSetting: Button
+
+    // ===== CORE =====
     private lateinit var clockManager: ClockManager
+    private lateinit var groqAi: GroqAiEngine
+    private lateinit var voiceEngine: VoiceEngine
+    private lateinit var cameraController: CameraController
+    private lateinit var memoryManager: MemoryManager
+    private lateinit var smartMode: SmartMode
 
-    private var lastMotionTime: Long = 0
-    private val motionCooldown: Long = 3000
-
-    private val permissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { perms ->
-            if (perms[Manifest.permission.CAMERA] == true &&
-                perms[Manifest.permission.RECORD_AUDIO] == true
-            ) startCamera()
-            else Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
-        }
+    // ===== CONFIG =====
+    private val PERMISSION_REQ = 1308
+    private val MASTER_COMMAND = "SmartEyeX 130809"
+    private val handler = Handler()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        tts = TextToSpeechManager(this)
-        groqAI = GroqAIEngine(this)
-        clockManager = ClockManager(this, findViewById(R.id.tv_clock))
+        // ===== INIT UI =====
+        txtClock = findViewById(R.id.tvClock)
+        txtDate = findViewById(R.id.tvDate)
+        statusCamera = findViewById(R.id.statusCamera)
+        statusSound = findViewById(R.id.statusSound)
+        statusAI = findViewById(R.id.statusAI)
+        miniHud = findViewById(R.id.miniHud)
+        etChat = findViewById(R.id.etChat)
+        btnMic = findViewById(R.id.btnMic)
+        btnSend = findViewById(R.id.btnSend)
+        chatContainer = findViewById(R.id.chatContainer)
+        btnDashboard = findViewById(R.id.btnDashboard)
+        btnCamera = findViewById(R.id.btnCamera)
+        btnMemory = findViewById(R.id.btnMemory)
+        btnSetting = findViewById(R.id.btnSetting)
 
-        Handler(Looper.getMainLooper()).postDelayed({
-            findViewById<View>(R.id.splash_container).visibility = View.GONE
-            findViewById<View>(R.id.start_container).visibility = View.VISIBLE
-        }, 2000)
+        // ===== PERMISSIONS =====
+        PermissionHelper.requestAll(this, PERMISSION_REQ)
 
-        findViewById<Button>(R.id.btn_start).setOnClickListener {
-            findViewById<View>(R.id.start_container).visibility = View.GONE
-            findViewById<View>(R.id.dashboard_container).visibility = View.VISIBLE
-            requestPermissionsIfNeeded()
-            clockManager.start()
+        // ===== INIT CORE =====
+        clockManager = ClockManager()
+        groqAi = GroqAiEngine()
+        voiceEngine = VoiceEngine(this)
+        cameraController = CameraController(this)
+        memoryManager = MemoryManager(this)
+        smartMode = SmartMode(this, groqAi, memoryManager, voiceEngine)
+
+        // ===== START CLOCK =====
+        clockManager.start { time, date ->
+            txtClock.text = time
+            txtDate.text = date
         }
 
-        findViewById<Button>(R.id.btnToggleObserve).setOnClickListener {
-            toggleCameraObserve()
+        // ===== START CAMERA =====
+        cameraController.startCamera()
+        statusCamera.text = "🎥 ON"
+
+        // ===== START WA LISTENER =====
+        startService(Intent(this, WaNotificationListener::class.java))
+
+        // ===== INIT AI STATUS =====
+        statusAI.text = "🧠 READY"
+
+        // ===== BUTTON NAVIGATION =====
+        btnDashboard.setOnClickListener { showDashboard() }
+        btnCamera.setOnClickListener { showCamera() }
+        btnMemory.setOnClickListener { showMemory() }
+        btnSetting.setOnClickListener { showSettings() }
+
+        // ===== CHAT MIC & SEND =====
+        btnMic.setOnClickListener {
+            voiceEngine.startListening { command ->
+                handleCommand(command)
+            }
         }
 
-        findViewById<Button>(R.id.btnMemory).setOnClickListener {
+        btnSend.setOnClickListener {
+            val text = etChat.text.toString()
+            if (text.isNotBlank()) {
+                handleCommand(text)
+                etChat.text.clear()
+            }
+        }
+    }
+
+    // ===== HANDLE COMMAND =====
+    private fun handleCommand(command: String) {
+        if (command.equals(MASTER_COMMAND, ignoreCase = true)) {
+            voiceEngine.speak("Akses memori dibuka")
             showMemory()
+            return
         }
-    }
 
-    private fun requestPermissionsIfNeeded() {
-        val camOk = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-        val audOk = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-        if (!camOk || !audOk) {
-            permissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.CAMERA,
-                    Manifest.permission.RECORD_AUDIO
-                )
-            )
-        } else startCamera()
-    }
+        // Simpan memori
+        memoryManager.save(command)
 
-    private fun startCamera() {
-        val frag = CameraFragment.newInstance()
-        frag.setOnMotionDetectedListener {
-            val now = SystemClock.elapsedRealtime()
-            if (now - lastMotionTime >= motionCooldown) {
-                lastMotionTime = now
-                onMotionDetected()
+        // Proses AI
+        groqAi.ask(command, onResult = { response ->
+            runOnUiThread {
+                statusAI.text = response.take(20) + "..."
+                addChat("AI: $response")
+                voiceEngine.speak(response)
             }
-        }
-
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.camera_container, frag, "CAMERA")
-            .commit()
-    }
-
-    private fun toggleCameraObserve() {
-        val frag = supportFragmentManager.findFragmentByTag("CAMERA")
-        if (frag != null)
-            supportFragmentManager.beginTransaction().remove(frag).commit()
-        else startCamera()
-    }
-
-    private fun onMotionDetected() {
-        showFloatingHud("Movement Detected", "Analyzing...")
-        tts.speak("Ada gerakan terdeteksi")
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            val db = AppDatabase.getInstance(applicationContext)
-
-            db.eventDao().insert(
-                Event(
-                    time = System.currentTimeMillis(),
-                    type = "MOVEMENT",
-                    data = "Motion detected"
-                )
-            )
-
-            val aiResponse = groqAI.analyzeEvent("Movement detected")
-
-            launch(Dispatchers.Main) {
-                findViewById<TextView>(R.id.tv_ai_response)?.text = aiResponse
-                tts.speak(aiResponse)
+        }, onError = { err ->
+            runOnUiThread {
+                statusAI.text = "AI ERROR"
+                addChat("AI ERROR: $err")
             }
-        }
+        })
+
+        addChat("User: $command")
+    }
+
+    // ===== UI HELPERS =====
+    private fun addChat(text: String) {
+        val tv = TextView(this)
+        tv.text = text
+        tv.setTextColor(0xFFFFFFFF.toInt())
+        chatContainer.addView(tv)
+        handler.post { scrollChatToBottom() }
+    }
+
+    private fun scrollChatToBottom() {
+        (chatContainer.parent as? ScrollView)?.fullScroll(View.FOCUS_DOWN)
+    }
+
+    private fun showDashboard() {
+        cameraController.hideCameraPreview()
+        statusCamera.text = "🎥 OFF"
+        chatContainer.visibility = View.VISIBLE
+    }
+
+    private fun showCamera() {
+        cameraController.showCameraPreview()
+        statusCamera.text = "🎥 ON"
+        chatContainer.visibility = View.GONE
     }
 
     private fun showMemory() {
-        lifecycleScope.launch(Dispatchers.IO) {
-            val events = AppDatabase.getInstance(applicationContext)
-                .eventDao()
-                .getLastEvents(10)
+        cameraController.hideCameraPreview()
+        statusCamera.text = "🎥 OFF"
+        chatContainer.removeAllViews()
+        chatContainer.visibility = View.VISIBLE
+        val memDump = memoryManager.dumpMemory()
+        addChat("Memory:\n$memDump")
+    }
 
-            launch(Dispatchers.Main) {
-                val msg = "Memory tersimpan: ${events.size}"
-                showFloatingHud("Memory", msg)
-                tts.speak(msg)
+    private fun showSettings() {
+        cameraController.hideCameraPreview()
+        statusCamera.text = "🎥 OFF"
+        chatContainer.visibility = View.GONE
+        Toast.makeText(this, "Settings belum aktif", Toast.LENGTH_SHORT).show()
+    }
+
+    // ===== PERMISSION CALLBACK =====
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQ) {
+            for (res in grantResults) {
+                if (res != PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "Permission wajib!", Toast.LENGTH_LONG).show()
+                    finish()
+                    return
+                }
             }
         }
     }
 
-    private fun showFloatingHud(title: String, message: String) {
-        val container = findViewById<FrameLayout>(R.id.floatingHudContainer)
-        container.removeAllViews()
-
-        val view = LayoutInflater.from(this)
-            .inflate(R.layout.view_floating_notification, container, false)
-
-        view.findViewById<TextView>(R.id.hud_title).text = title
-        view.findViewById<TextView>(R.id.hud_message).text = message
-        container.addView(view)
-
-        view.alpha = 0f
-        view.scaleX = 0.9f
-        view.scaleY = 0.9f
-
-        view.animate()
-            .alpha(1f)
-            .scaleX(1f)
-            .scaleY(1f)
-            .setDuration(300)
-            .setInterpolator(AccelerateDecelerateInterpolator())
-            .withEndAction {
-                view.postDelayed({
-                    view.animate()
-                        .alpha(0f)
-                        .setDuration(300)
-                        .withEndAction { container.removeAllViews() }
-                        .start()
-                }, 3000)
-            }.start()
-    }
-
+    // ===== CLEANUP =====
     override fun onDestroy() {
         super.onDestroy()
-        tts.shutdown()
+        cameraController.stopCamera()
+        voiceEngine.shutdown()
         clockManager.stop()
     }
 }

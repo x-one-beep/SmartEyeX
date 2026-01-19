@@ -1,38 +1,72 @@
-package com.smarteyex.core.wa
+package com.smarteyex.app.wa
 
+import android.app.Notification
+import android.app.Notification.Action
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import android.speech.tts.TextToSpeech
-import android.content.Context
 import android.util.Log
-import java.util.*
+import com.smarteyex.app.ai.GroqAI
+import com.smarteyex.app.memory.MemoryManager
+import com.smarteyex.app.voice.VoiceEngine
 
 class WaNotificationListener : NotificationListenerService() {
 
-    private var tts: TextToSpeech? = null
+    private lateinit var memoryManager: MemoryManager
+    private lateinit var ai: GroqAI
+    private lateinit var voice: VoiceEngine
 
     override fun onCreate() {
         super.onCreate()
-        tts = TextToSpeech(this) { status ->
-            if (status == TextToSpeech.SUCCESS) tts?.language = Locale("id", "ID")
-        }
+
+        memoryManager = MemoryManager(this)
+        ai = GroqAI(BuildConfig.GROQ_API_KEY)
+        voice = VoiceEngine(this) {}
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        val pack = sbn.packageName
-        if (pack.contains("com.whatsapp")) {
-            val msg = sbn.notification.extras.getString("android.text") ?: "WA masuk"
-            speakWA(msg)
+
+        if (sbn.packageName != "com.whatsapp") return
+
+        val notification = sbn.notification
+        val extras = notification.extras
+
+        val title = extras.getString(Notification.EXTRA_TITLE) ?: return
+        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: return
+
+        // Filter notifikasi sistem WA
+        if (title.contains("WhatsApp", true)) return
+
+        Log.d("SmartEyeX-WA", "Dari: $title | Pesan: $text")
+
+        // Simpan ke memori
+        memoryManager.save("WA dari $title: $text")
+
+        // Proses AI
+        Thread {
+            val response = ai.ask(
+                "Balas pesan WhatsApp secara sopan, singkat, gaya Gen Z. Pesan: $text"
+            )
+
+            // Balas otomatis
+            reply(notification.actions, response)
+
+            // Suarakan
+            voice.speak("Pesan dari $title. Saya sudah membalas.")
+        }.start()
+    }
+
+    private fun reply(actions: Array<Action>?, message: String) {
+        if (actions == null) return
+
+        for (action in actions) {
+            if (action.remoteInputs != null) {
+                WaReplyHelper.sendReply(
+                    applicationContext,
+                    action,
+                    message
+                )
+                break
+            }
         }
-    }
-
-    private fun speakWA(text: String) {
-        tts?.speak("Bung X, ada WA: $text", TextToSpeech.QUEUE_ADD, null, null)
-        Log.d("WA_LISTENER", text)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        tts?.shutdown()
     }
 }

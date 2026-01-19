@@ -6,22 +6,27 @@ import java.util.*
 
 class TextToSpeechManager(context: Context) {
 
-    private lateinit var tts: TextToSpeech
+    private var tts: TextToSpeech? = null
+    var isEnabled = true
 
     init {
-        tts = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                tts.language = Locale("id", "ID")
+        tts = TextToSpeech(context) {
+            if (it == TextToSpeech.SUCCESS) {
+                tts?.language = Locale("id", "ID")
             }
         }
     }
 
     fun speak(text: String) {
-        tts.speak(text, TextToSpeech.QUEUE_ADD, null, null)
+        if (!isEnabled) return
+        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "SmartEyeX_TTS")
     }
 
-    fun shutdown() {
-        tts.stop()
-        tts.shutdown()
+    fun stop() {
+        tts?.stop()
+    }
+
+    fun release() {
+        tts?.shutdown()
     }
 }
