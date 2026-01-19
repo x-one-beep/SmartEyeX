@@ -12,11 +12,11 @@ val secretsProps = Properties().apply {
 }
 
 android {
-    namespace = "com.smarteyex.core"
+    namespace = "com.smarteyex.app" // HARUS sesuai package MainActivity & Manifest
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.smarteyex.core"
+        applicationId = "com.smarteyex.app"
         minSdk = 29
         targetSdk = 34
         versionCode = 1
@@ -86,4 +86,12 @@ dependencies {
     // Material + Lottie
     implementation("com.google.android.material:material:1.11.0")
     implementation("com.airbnb.android:lottie:5.2.0")
+
+    // Core + TextToSpeech
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+
+    // JSON & HTTP
+    implementation("org.json:json:20230227")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
 }
