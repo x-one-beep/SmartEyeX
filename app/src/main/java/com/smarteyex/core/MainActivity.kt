@@ -2,15 +2,10 @@ package com.smarteyex.core
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.os.SystemClock
+import android.os.*
 import android.view.LayoutInflater
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.widget.FrameLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -30,47 +25,42 @@ class MainActivity : AppCompatActivity() {
     private lateinit var groqAI: GroqAIEngine
     private lateinit var clockManager: ClockManager
 
-    private var lastMotionTime = 0L
-    private val motionCooldown = 3000L
+    private var lastMotionTime: Long = 0
+    private val motionCooldown: Long = 3000
 
-    private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { perms ->
-        if (perms[Manifest.permission.CAMERA] == true && perms[Manifest.permission.RECORD_AUDIO] == true) {
-            startCamera()
-        } else {
-            Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+    private val permissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { perms ->
+            if (perms[Manifest.permission.CAMERA] == true &&
+                perms[Manifest.permission.RECORD_AUDIO] == true
+            ) startCamera()
+            else Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Init core modules
         tts = TextToSpeechManager(this)
         groqAI = GroqAIEngine(this)
         clockManager = ClockManager(this, findViewById(R.id.tv_clock))
 
-        // Splash -> Start
         Handler(Looper.getMainLooper()).postDelayed({
-            findViewById<android.view.View>(R.id.splash_container).visibility = android.view.View.GONE
-            findViewById<android.view.View>(R.id.start_container).visibility = android.view.View.VISIBLE
+            findViewById<View>(R.id.splash_container).visibility = View.GONE
+            findViewById<View>(R.id.start_container).visibility = View.VISIBLE
         }, 2000)
 
-        // Button listeners
-        findViewById<android.widget.Button>(R.id.btn_start).setOnClickListener {
-            findViewById<android.view.View>(R.id.start_container).visibility = android.view.View.GONE
-            findViewById<android.view.View>(R.id.dashboard_container).visibility = android.view.View.VISIBLE
+        findViewById<Button>(R.id.btn_start).setOnClickListener {
+            findViewById<View>(R.id.start_container).visibility = View.GONE
+            findViewById<View>(R.id.dashboard_container).visibility = View.VISIBLE
             requestPermissionsIfNeeded()
             clockManager.start()
         }
 
-        findViewById<android.widget.Button>(R.id.btnToggleObserve).setOnClickListener {
+        findViewById<Button>(R.id.btnToggleObserve).setOnClickListener {
             toggleCameraObserve()
         }
 
-        findViewById<android.widget.Button>(R.id.btnMemory).setOnClickListener {
+        findViewById<Button>(R.id.btnMemory).setOnClickListener {
             showMemory()
         }
     }
@@ -79,7 +69,12 @@ class MainActivity : AppCompatActivity() {
         val camOk = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
         val audOk = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         if (!camOk || !audOk) {
-            permissionLauncher.launch(arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO))
+            permissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.RECORD_AUDIO
+                )
+            )
         } else startCamera()
     }
 
@@ -92,6 +87,7 @@ class MainActivity : AppCompatActivity() {
                 onMotionDetected()
             }
         }
+
         supportFragmentManager.beginTransaction()
             .replace(R.id.camera_container, frag, "CAMERA")
             .commit()
@@ -99,20 +95,28 @@ class MainActivity : AppCompatActivity() {
 
     private fun toggleCameraObserve() {
         val frag = supportFragmentManager.findFragmentByTag("CAMERA")
-        if (frag != null) supportFragmentManager.beginTransaction().remove(frag).commit()
+        if (frag != null)
+            supportFragmentManager.beginTransaction().remove(frag).commit()
         else startCamera()
     }
 
     private fun onMotionDetected() {
         showFloatingHud("Movement Detected", "Analyzing...")
-        tts.speak("Ada gerakan terdeteksi, sedang menganalisis")
+        tts.speak("Ada gerakan terdeteksi")
 
         lifecycleScope.launch(Dispatchers.IO) {
             val db = AppDatabase.getInstance(applicationContext)
-            // Event safe dengan tipe Long dan String
-            db.eventDao().insert(Event(timestamp = System.currentTimeMillis(), type = "MOVEMENT", data = "Motion detected"))
+
+            db.eventDao().insert(
+                Event(
+                    time = System.currentTimeMillis(),
+                    type = "MOVEMENT",
+                    data = "Motion detected"
+                )
+            )
 
             val aiResponse = groqAI.analyzeEvent("Movement detected")
+
             launch(Dispatchers.Main) {
                 findViewById<TextView>(R.id.tv_ai_response)?.text = aiResponse
                 tts.speak(aiResponse)
@@ -122,10 +126,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun showMemory() {
         lifecycleScope.launch(Dispatchers.IO) {
-            val db = AppDatabase.getInstance(applicationContext)
-            val events = db.eventDao().getLastEvents(10)
+            val events = AppDatabase.getInstance(applicationContext)
+                .eventDao()
+                .getLastEvents(10)
+
             launch(Dispatchers.Main) {
-                val msg = if (events.isEmpty()) "No memory" else "Saved ${events.size} items"
+                val msg = "Memory tersimpan: ${events.size}"
                 showFloatingHud("Memory", msg)
                 tts.speak(msg)
             }
@@ -135,33 +141,33 @@ class MainActivity : AppCompatActivity() {
     private fun showFloatingHud(title: String, message: String) {
         val container = findViewById<FrameLayout>(R.id.floatingHudContainer)
         container.removeAllViews()
-        val view = LayoutInflater.from(this).inflate(R.layout.view_floating_notification, container, false)
-        view.findViewById<TextView>(R.id.hud_title)?.text = title
-        view.findViewById<TextView>(R.id.hud_message)?.text = message
+
+        val view = LayoutInflater.from(this)
+            .inflate(R.layout.view_floating_notification, container, false)
+
+        view.findViewById<TextView>(R.id.hud_title).text = title
+        view.findViewById<TextView>(R.id.hud_message).text = message
         container.addView(view)
 
-        view.apply {
-            alpha = 0f
-            scaleX = 0.92f
-            scaleY = 0.92f
-            animate()
-                .alpha(1f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .setDuration(300)
-                .setInterpolator(AccelerateDecelerateInterpolator())
-                .withEndAction {
-                    postDelayed({
-                        animate()
-                            .alpha(0f)
-                            .scaleX(0.94f)
-                            .scaleY(0.94f)
-                            .setDuration(300)
-                            .withEndAction { container.removeView(this) }
-                            .start()
-                    }, 3000)
-                }.start()
-        }
+        view.alpha = 0f
+        view.scaleX = 0.9f
+        view.scaleY = 0.9f
+
+        view.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(300)
+            .setInterpolator(AccelerateDecelerateInterpolator())
+            .withEndAction {
+                view.postDelayed({
+                    view.animate()
+                        .alpha(0f)
+                        .setDuration(300)
+                        .withEndAction { container.removeAllViews() }
+                        .start()
+                }, 3000)
+            }.start()
     }
 
     override fun onDestroy() {
