@@ -18,7 +18,7 @@ import com.smarteyex.core.data.Event
 import com.smarteyex.core.tts.TextToSpeechManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-
+import android.view.View
 class MainActivity : AppCompatActivity() {
 
     private lateinit var tts: TextToSpeechManager
