@@ -17,6 +17,7 @@ import com.smarteyex.app.smart.SmartMode
 import com.smarteyex.app.wa.WaNotificationListener
 import com.smarteyex.app.util.PermissionHelper
 import java.util.*
+import okhttp3.MediaType.Companion.toMediaType
 
 class MainActivity : AppCompatActivity() {
 
