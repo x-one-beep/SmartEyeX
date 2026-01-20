@@ -5,7 +5,7 @@ import okhttp3.*
 import org.json.JSONObject
 import java.io.IOException
 
-class GroqAiEngine {
+class AiEngine {
 
     private val client = OkHttpClient()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
