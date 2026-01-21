@@ -1,4 +1,4 @@
-package com.smarteyex.core.camera
+package com.smarteyex.core
 
 import android.os.Bundle
 import android.view.LayoutInflater
