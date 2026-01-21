@@ -1,19 +1,18 @@
 package com.smarteyex.core
 
-class NavigationStateManager {
+object NavigationStateManager {
 
-    var currentSection: AppSection = AppSection.DASHBOARD
-        private set
-
-    private var onChange: ((AppSection) -> Unit)? = null
-
-    fun setOnChangeListener(listener: (AppSection) -> Unit) {
-        onChange = listener
+    enum class Screen {
+        DASHBOARD,
+        CAMERA,
+        SETTINGS
     }
 
-    fun navigateTo(section: AppSection) {
-        if (section == currentSection) return
-        currentSection = section
-        onChange?.invoke(section)
+    private var current = Screen.DASHBOARD
+
+    fun set(screen: Screen) {
+        current = screen
     }
+
+    fun get(): Screen = current
 }

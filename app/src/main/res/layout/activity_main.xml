@@ -1,186 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/rootDashboard"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0B0F14">
+    android:orientation="vertical"
+    android:background="#000000"
+    android:padding="16dp">
 
-    <!-- ================= TOP BAR ================= -->
-    <LinearLayout
-        android:id="@+id/topBar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="12dp"
-        android:background="#22FFFFFF"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <TextView
-            android:id="@+id/tvClock"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="20:31:05"
-            android:textSize="26sp"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"/>
-
-        <TextView
-            android:id="@+id/tvDate"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="19 Januari 2026"
-            android:textSize="12sp"
-            android:textColor="#B0FFFFFF"/>
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="6dp">
-
-            <TextView
-                android:id="@+id/statusCamera"
-                android:text="🎥 OFF"
-                android:textColor="#FFAAAA"
-                android:layout_marginEnd="12dp"
-                android:textSize="12sp"/>
-
-            <TextView
-                android:id="@+id/statusSound"
-                android:text="🔊 ON"
-                android:textColor="#AAFFAA"
-                android:layout_marginEnd="12dp"
-                android:textSize="12sp"/>
-
-            <TextView
-                android:id="@+id/statusAI"
-                android:text="🧠 READY"
-                android:textColor="#88CCFF"
-                android:textSize="12sp"/>
-        </LinearLayout>
-    </LinearLayout>
-
-    <!-- ================= AI PANEL ================= -->
-    <LinearLayout
-        android:id="@+id/aiPanel"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:orientation="vertical"
-        android:padding="12dp"
-        android:background="#11FFFFFF"
-        app:layout_constraintTop_toBottomOf="@id/topBar"
-        app:layout_constraintBottom_toTopOf="@id/bottomNav"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <!-- Chat area -->
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1">
-
-            <LinearLayout
-                android:id="@+id/chatContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"/>
-        </ScrollView>
-
-        <!-- Input -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="8dp">
-
-            <EditText
-                android:id="@+id/etChat"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="Tanya SmartEyeX..."
-                android:textColor="#FFFFFF"
-                android:textColorHint="#88FFFFFF"
-                android:background="#22000000"
-                android:padding="10dp"/>
-
-            <ImageButton
-                android:id="@+id/btnMic"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="6dp"
-                android:background="#2200FFAA"
-                android:contentDescription="Mic"
-                android:src="@android:drawable/ic_btn_speak_now"/>
-
-            <ImageButton
-                android:id="@+id/btnSend"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="6dp"
-                android:background="#2233AAFF"
-                android:contentDescription="Send"
-                android:src="@android:drawable/ic_menu_send"/>
-        </LinearLayout>
-    </LinearLayout>
-
-    <!-- ================= MINI HUD / NOTIF ================= -->
+    <!-- JAM -->
     <TextView
-        android:id="@+id/miniHud"
+        android:id="@+id/tvClock"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="[WA] Ibu: Jangan lupa pulang"
-        android:textSize="11sp"
-        android:textColor="#FFFFFF"
-        android:padding="8dp"
-        android:background="#33000000"
-        app:layout_constraintBottom_toTopOf="@id/bottomNav"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="8dp"/>
+        android:text="00:00:00"
+        android:textColor="#00FFCC"
+        android:textSize="28sp"
+        android:textStyle="bold" />
 
-    <!-- ================= BOTTOM NAV ================= -->
-    <LinearLayout
-        android:id="@+id/bottomNav"
-        android:layout_width="0dp"
-        android:layout_height="64dp"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:background="#22000000"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+    <!-- TANGGAL -->
+    <TextView
+        android:id="@+id/tvDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="01 Januari 2026"
+        android:textColor="#CCCCCC"
+        android:textSize="14sp"
+        android:layout_marginBottom="12dp" />
 
-        <Button
-            android:id="@+id/btnDashboard"
-            android:text="🏠"
-            android:textSize="18sp"
-            android:background="@android:color/transparent"
-            android:textColor="#FFFFFF"/>
+    <!-- AREA CHAT -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
 
-        <Button
-            android:id="@+id/btnCamera"
-            android:text="🎥"
-            android:textSize="18sp"
-            android:background="@android:color/transparent"
-            android:textColor="#FFFFFF"/>
+        <LinearLayout
+            android:id="@+id/chatContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
 
-        <Button
-            android:id="@+id/btnMemory"
-            android:text="🧠"
-            android:textSize="18sp"
-            android:background="@android:color/transparent"
-            android:textColor="#FFFFFF"/>
-
-        <Button
-            android:id="@+id/btnSetting"
-            android:text="⚙️"
-            android:textSize="18sp"
-            android:background="@android:color/transparent"
-            android:textColor="#FFFFFF"/>
-    </LinearLayout>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

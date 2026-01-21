@@ -1,37 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/hud_card"
-    android:layout_width="260dp"
-    android:layout_height="80dp"
-    android:layout_margin="12dp"
-    app:cardCornerRadius="16dp"
-    app:cardUseCompatPadding="true"
-    app:cardElevation="8dp"
-    app:cardBackgroundColor="#CC0B1020">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#222222"
+    android:padding="8dp">
 
-    <LinearLayout
-        android:orientation="vertical"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="12dp">
+    <TextView
+        android:id="@+id/tvFloatingTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Notifikasi"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/hud_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:text="Title"/>
+    <TextView
+        android:id="@+id/tvFloatingMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pesan masuk"
+        android:textColor="#CCCCCC" />
 
-        <TextView
-            android:id="@+id/hud_message"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@android:color/white"
-            android:textSize="14sp"
-            android:text="Message"/>
-    </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+</LinearLayout>

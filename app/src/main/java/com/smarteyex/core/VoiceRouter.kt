@@ -1,29 +1,36 @@
 package com.smarteyex.core
 
 import android.content.Context
-import com.smarteyex.core.ai.GroqAIEngine
-import com.smarteyex.core.tts.TextToSpeechManager
-import com.smarteyex.core.wa.WaSessionManager
+import android.widget.Toast
 
 object VoiceRouter {
 
-    fun route(context: Context, spoken: String) {
-        val lower = spoken.lowercase()
+    private val parser = VoiceCommandParser()
 
-        when {
-            lower.contains("jawab") ||
-            lower.contains("read") ||
-            lower.contains("diemin") -> {
-                WaSessionManager.handleVoiceCommand(context, spoken)
+    fun route(context: Context, text: String) {
+        when (parser.parse(text)) {
+
+            "OPEN_CAMERA" -> {
+                NavigationStateManager.set(
+                    NavigationStateManager.Screen.CAMERA
+                )
+                Toast.makeText(context, "Camera mode", Toast.LENGTH_SHORT).show()
+            }
+
+            "SHOW_TIME" -> {
+                Toast.makeText(context, "Jam aktif", Toast.LENGTH_SHORT).show()
+            }
+
+            "ASK_AI" -> {
+                Toast.makeText(context, "AI listening", Toast.LENGTH_SHORT).show()
+            }
+
+            "STOP_VOICE" -> {
+                Toast.makeText(context, "Voice stopped", Toast.LENGTH_SHORT).show()
             }
 
             else -> {
-                // fallback → chat AI
-                val ai = GroqAIEngine(context)
-                val tts = TextToSpeechManager(context)
-
-                val response = ai.chat(spoken)
-                tts.speak(response)
+                Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
             }
         }
     }

@@ -8,41 +8,24 @@ import java.util.*
 class ClockManager {
 
     private val handler = Handler(Looper.getMainLooper())
-    private var offsetMillis: Long = 0L
+    private var listener: ((String, String) -> Unit)? = null
 
-    private var onTick: ((time: String, date: String) -> Unit)? = null
-
-    private val runnable = object : Runnable {
+    private val tick = object : Runnable {
         override fun run() {
-            val now = System.currentTimeMillis() + offsetMillis
-
-            val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-            val dateFormat = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
-
-            val time = timeFormat.format(Date(now))
-            val date = dateFormat.format(Date(now))
-
-            onTick?.invoke(time, date)
-
+            val now = Date()
+            val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(now)
+            val date = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(now)
+            listener?.invoke(time, date)
             handler.postDelayed(this, 1000)
         }
     }
 
-    fun start(onTick: (time: String, date: String) -> Unit) {
-        this.onTick = onTick
-        stop()
-        handler.post(runnable)
+    fun start(onTick: (String, String) -> Unit) {
+        listener = onTick
+        handler.post(tick)
     }
 
     fun stop() {
-        handler.removeCallbacks(runnable)
-    }
-
-    fun setOffsetSeconds(seconds: Int) {
-        offsetMillis = seconds * 1000L
-    }
-
-    fun resetOffset() {
-        offsetMillis = 0L
+        handler.removeCallbacks(tick)
     }
 }

@@ -1,50 +1,44 @@
 package com.smarteyex.core
 
 import android.content.Context
-import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
+import android.speech.*
 import android.speech.tts.TextToSpeech
-import android.util.Log
 import java.util.*
 
 class VoiceEngine(context: Context) : TextToSpeech.OnInitListener {
 
-    private var tts: TextToSpeech = TextToSpeech(context, this)
-    private var recognizer: SpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
-    private var listener: ((String) -> Unit)? = null
+    private val tts = TextToSpeech(context, this)
+    private val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
+    private var callback: ((String) -> Unit)? = null
 
     init {
         recognizer.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) {}
-            override fun onBeginningOfSpeech() {}
-            override fun onRmsChanged(rmsdB: Float) {}
-            override fun onBufferReceived(buffer: ByteArray?) {}
-            override fun onEndOfSpeech() {}
-            override fun onError(error: Int) {
-                Log.e("VoiceEngine", "Recognizer error: $error")
-            }
             override fun onResults(results: Bundle?) {
-                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                matches?.firstOrNull()?.let { listener?.invoke(it) }
+                val text = results
+                    ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    ?.firstOrNull()
+                text?.let { callback?.invoke(it) }
             }
-            override fun onPartialResults(partialResults: Bundle?) {}
-            override fun onEvent(eventType: Int, params: Bundle?) {}
+            override fun onError(error: Int) {}
+            override fun onReadyForSpeech(p0: Bundle?) {}
+            override fun onBeginningOfSpeech() {}
+            override fun onRmsChanged(p0: Float) {}
+            override fun onBufferReceived(p0: ByteArray?) {}
+            override fun onEndOfSpeech() {}
+            override fun onPartialResults(p0: Bundle?) {}
+            override fun onEvent(p0: Int, p1: Bundle?) {}
         })
     }
 
-    fun startListening(callback: (String) -> Unit) {
-        listener = callback
+    fun startListening(onResult: (String) -> Unit) {
+        callback = onResult
         val intent = RecognizerIntent().apply {
             action = RecognizerIntent.ACTION_RECOGNIZE_SPEECH
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
         }
         recognizer.startListening(intent)
-    }
-
-    fun stopListening() {
-        recognizer.stopListening()
     }
 
     fun speak(text: String) {
@@ -58,8 +52,7 @@ class VoiceEngine(context: Context) : TextToSpeech.OnInitListener {
     }
 
     fun shutdown() {
-        tts.stop()
-        tts.shutdown()
         recognizer.destroy()
+        tts.shutdown()
     }
 }
