@@ -1,4 +1,4 @@
-package com.smarteyex.core.tts
+package com.smarteyex.core
 
 import android.content.Context
 import android.speech.tts.TextToSpeech
