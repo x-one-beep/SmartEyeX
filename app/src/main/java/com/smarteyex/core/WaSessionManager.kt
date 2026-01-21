@@ -1,4 +1,4 @@
-package com.smarteyex.core.wa
+package com.smarteyex.core
 
 import android.content.Context
 import android.service.notification.StatusBarNotification
