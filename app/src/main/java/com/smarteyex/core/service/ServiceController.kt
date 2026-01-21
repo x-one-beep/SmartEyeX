@@ -1,4 +1,4 @@
-package com.smarteyex.core.service
+package com.smarteyex.core
 
 import android.content.Context
 import android.content.Intent
