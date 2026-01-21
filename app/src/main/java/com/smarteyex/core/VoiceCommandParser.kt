@@ -1,4 +1,4 @@
-package com.smarteyex.core.wa
+package com.smarteyex.core
 
 enum class CommandType { REPLY, READ, IGNORE }
 
