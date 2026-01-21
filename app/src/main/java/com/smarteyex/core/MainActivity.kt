@@ -1,4 +1,4 @@
-package com.smarteyex.app
+package com.smarteyex.core
 
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -7,17 +7,16 @@ import android.os.Handler
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
+import androidx.core.ActivityCompat
 import com.smarteyex.core.ClockManager
 import com.smarteyex.core.GroqAiEngine
 import com.smarteyex.core.VoiceEngine
-import com.smarteyex.app.camera.CameraController
-import com.smarteyex.app.memory.MemoryManager
-import com.smarteyex.app.smart.SmartMode
-import com.smarteyex.app.wa.WaNotificationListener
-import com.smarteyex.app.util.PermissionHelper
+import com.smarteyex.core.camera.CameraController
+import com.smarteyex.core.memory.MemoryManager
+import com.smarteyex.core.smart.SmartMode
+import com.smarteyex.core.wa.WaNotificationListener
+import com.smarteyex.core.util.PermissionHelper
 import java.util.*
-import okhttp3.MediaType.Companion.toMediaType
 
 class MainActivity : AppCompatActivity() {
 
