@@ -1,4 +1,4 @@
-package com.smarteyex.core.data
+package com.smarteyex.core
 
 import androidx.room.Dao
 import androidx.room.Insert
