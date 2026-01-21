@@ -1,4 +1,4 @@
-package com.smarteyex.core.data
+package com.smarteyex.core
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
