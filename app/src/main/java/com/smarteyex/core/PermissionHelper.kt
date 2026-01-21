@@ -1,4 +1,4 @@
-package com.smarteyex.core.util
+package com.smarteyex.core
 
 import android.app.Activity
 import android.content.pm.PackageManager
