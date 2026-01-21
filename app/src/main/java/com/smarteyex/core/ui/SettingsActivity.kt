@@ -1,4 +1,4 @@
-package com.smarteyex.core.ui
+package com.smarteyex.core
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceFragmentCompat
