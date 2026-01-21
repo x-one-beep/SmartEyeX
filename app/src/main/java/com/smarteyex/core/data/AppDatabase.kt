@@ -1,4 +1,4 @@
-package com.smarteyex.core.data
+package com.smarteyex.core
 
 import android.content.Context
 import androidx.room.Database
