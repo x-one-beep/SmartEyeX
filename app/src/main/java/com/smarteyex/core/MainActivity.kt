@@ -11,7 +11,7 @@ import androidx.core.ActivityCompat
 import com.smarteyex.core.ClockManager
 import com.smarteyex.core.GroqAiEngine
 import com.smarteyex.core.VoiceEngine
-import com.smarteyex.core.camera.CameraController
+import com.smarteyex.core.CameraController
 import com.smarteyex.core.memory.MemoryManager
 import com.smarteyex.core.smart.SmartMode
 import com.smarteyex.core.wa.WaNotificationListener
