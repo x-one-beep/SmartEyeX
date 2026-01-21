@@ -1,4 +1,4 @@
-package com.smarteyex.app.wa
+package com.smarteyex.core
 
 import android.app.Notification
 import android.app.Notification.Action
