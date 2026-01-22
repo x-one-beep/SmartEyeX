@@ -23,18 +23,7 @@ android {
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField(
-            "String",
-            "GROQ_KEY",
-            "\"${secretsProps.getProperty("groq") ?: ""}\""
-        )
-        buildConfigField(
-            "String",
-            "WEATHER_KEY",
-            "\"${secretsProps.getProperty("weather") ?: ""}\""
-        )
-    }
-
+        buildConfigField "String", "GROQ_API_KEY", "\"${secretsProps.getProperty("groq") ?: ""}\""
     buildFeatures {
         viewBinding = true
         buildConfig = true
