@@ -5,6 +5,7 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import org.json.JSONObject
 import java.io.IOException
+import com.smarteyex.app.BuildConfig
 
 class GroqAiEngine {
 
