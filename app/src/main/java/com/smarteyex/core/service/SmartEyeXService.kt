@@ -46,7 +46,7 @@ class SmartEyeXService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("SmartEyeX Aktif")
             .setContentText("Background mode berjalan")
-            .setSmallIcon(R.drawable.ic_notification) // icon kecil
+            .setSmallIcon(R.mipmap.ic_launcher) // icon kecil
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .build()
