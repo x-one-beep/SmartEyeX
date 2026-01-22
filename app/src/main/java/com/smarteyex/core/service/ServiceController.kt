@@ -3,6 +3,7 @@ package com.smarteyex.core
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import com.smarteyex.app.R
 
 object ServiceController {
 
