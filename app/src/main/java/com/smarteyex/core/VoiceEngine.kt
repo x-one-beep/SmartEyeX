@@ -4,6 +4,8 @@ import android.content.Context
 import android.speech.*
 import android.speech.tts.TextToSpeech
 import java.util.*
+import android.os.Bundle
+import android.content.Intent
 
 class VoiceEngine(context: Context) : TextToSpeech.OnInitListener {
 
@@ -31,14 +33,20 @@ class VoiceEngine(context: Context) : TextToSpeech.OnInitListener {
     }
 
     fun startListening(onResult: (String) -> Unit) {
-        callback = onResult
-        val intent = RecognizerIntent().apply {
-            action = RecognizerIntent.ACTION_RECOGNIZE_SPEECH
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
-        }
-        recognizer.startListening(intent)
+    callback = onResult
+
+    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+        putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+        )
+        putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE,
+            Locale.getDefault()
+        )
+    }
+
+    recognizer.startListening(intent)
     }
 
     fun speak(text: String) {
