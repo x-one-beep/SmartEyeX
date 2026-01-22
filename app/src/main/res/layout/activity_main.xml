@@ -4,8 +4,31 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#00FFCC"
+    android:background="#00BFFFC"
     android:padding="16dp">
+
+    <!--loading-->
+    <TextView
+        android:id="@+id/tvLoading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Loading System..."
+        android:textSize="14sp"
+        android:textColor="#AAAAAA"
+        android:layout_marginTop="12dp"
+        android:alpha="0"/>
+    <!--tombol-->
+    <Button
+    android:id="@+id/btnStart"
+    android:layout_width="200dp"
+    android:layout_height="48dp"
+    android:text="ACTIVATE"
+    android:textColor="#000000"
+    android:textStyle="bold"
+    android:backgroundTint="#00FFCC"
+    android:layout_marginTop="32dp"
+    android:alpha="0"
+    android:visibility="gone"/>
 
     <!-- bacaan -->
     <TextView
