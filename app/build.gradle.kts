@@ -23,12 +23,11 @@ android {
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField "String", "GROQ_API_KEY", "\"${secretsProps.getProperty("groq") ?: ""}\""
-    buildFeatures {
-        viewBinding = true
-        buildConfig = true
-    }
-
+        buildConfigField(
+    "String",
+    "GROQ_API_KEY",
+    "\"${secretsProps.getProperty("groq") ?: ""}\""
+)
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
