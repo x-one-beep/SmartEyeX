@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
         date = findViewById(R.id.tvDate)
         chat = findViewById(R.id.chatContainer)
         val btnStart=findViewById<Button>(R.id.btnStart)
-       val btnstart=findViewById<TextView>(R.id.tvStatus)
+       val TextView=findViewById<TextView>(R.id.tvStatus)
        
         tvStatus.translationY = 50f
 tvStatus.alpha = 0f
