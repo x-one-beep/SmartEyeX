@@ -22,6 +22,29 @@ class MainActivity : AppCompatActivity() {
         clock = findViewById(R.id.tvClock)
         date = findViewById(R.id.tvDate)
         chat = findViewById(R.id.chatContainer)
+        val btnStart=findViewById<Button>(R.id.btnStart)
+       val btnstart=findViewById<textView>(R.id.tvStatus)
+       tvStatus.translationY = 50f
+tvStatus.alpha = 0f
+
+tvStatus.animate()
+    .translationY(0f)
+    .alpha(1f)
+    .setDuration(900)
+    .start()
+    
+        btnStart.scaleX = 0.8f
+btnStart.scaleY = 0.8f
+btnStart.alpha = 0f
+btnStart.visibility = View.VISIBLE
+
+btnStart.animate()
+    .scaleX(1f)
+    .scaleY(1f)
+    .alpha(1f)
+    .setStartDelay(1200)
+    .setDuration(600)
+    .start()
 
         ai = GroqAiEngine()
         voice = VoiceEngine(this)
