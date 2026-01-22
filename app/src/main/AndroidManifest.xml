@@ -34,9 +34,9 @@
 
         <!-- ===== VOICE BACKGROUND SERVICE ===== -->
         <service
-            android:name="com.smarteyex.core.VoiceService"
+            android:name="com.smarteyex.core.SmartEyeXService"
             android:exported="false"
-            android:foregroundServiceType="microphone" />
+            android:foregroundServiceType="microphone|camera" />
 
         <!-- ===== WHATSAPP NOTIFICATION LISTENER ===== -->
         <service
