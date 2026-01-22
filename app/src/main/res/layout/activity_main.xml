@@ -7,6 +7,18 @@
     android:background="#000000"
     android:padding="16dp">
 
+    <!-- bacaan -->
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        Android:text="SMART EYE X"
+        android:textColor="#00FF00"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:layout_centerInParent="true"/>
+    
+
     <!-- JAM -->
     <TextView
         android:id="@+id/tvClock"
