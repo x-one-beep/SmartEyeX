@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.smarteyex.app.R
+import android.view.View
 
 class MainActivity : AppCompatActivity() {
 
@@ -24,7 +25,8 @@ class MainActivity : AppCompatActivity() {
         chat = findViewById(R.id.chatContainer)
         val btnStart=findViewById<Button>(R.id.btnStart)
        val btnstart=findViewById<TextView>(R.id.tvStatus)
-       tvStatus.translationY = 50f
+       
+        tvStatus.translationY = 50f
 tvStatus.alpha = 0f
 
 tvStatus.animate()
