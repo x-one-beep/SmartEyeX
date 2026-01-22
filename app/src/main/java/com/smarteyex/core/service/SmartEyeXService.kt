@@ -6,7 +6,7 @@ import android.os.IBinder
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.smarteyex.core.MainActivity
-import com.smarteyex.core.R
+import com.smarteyex.app.R
 
 class SmartEyeXService : Service() {
 
