@@ -12,7 +12,7 @@ val secretsProps = Properties().apply {
 }
 
 android {
-    namespace = "com.smarteyex.app" // HARUS sesuai package MainActivity & Manifest
+    namespace = "com.smarteyex.app"
     compileSdk = 34
 
     defaultConfig {
@@ -24,10 +24,17 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField(
-    "String",
-    "GROQ_API_KEY",
-    "\"${secretsProps.getProperty("groq") ?: ""}\""
-)
+            "String",
+            "GROQ_API_KEY",
+            "\"${secretsProps.getProperty("groq") ?: ""}\""
+        )
+    }
+
+    buildFeatures {
+        viewBinding = true
+        buildConfig = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -43,7 +50,6 @@ android {
         }
         release {
             isMinifyEnabled = false
-            // DEBUG key dulu, signing nanti
         }
     }
 }
@@ -70,12 +76,12 @@ dependencies {
     // Preference & WorkManager
     implementation("androidx.preference:preference-ktx:1.2.0")
     implementation("androidx.work:work-runtime-ktx:2.8.1")
-    
+
     // Material + Lottie
     implementation("com.google.android.material:material:1.11.0")
     implementation("com.airbnb.android:lottie:5.2.0")
 
-    // Core + TextToSpeech
+    // Core
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
 
