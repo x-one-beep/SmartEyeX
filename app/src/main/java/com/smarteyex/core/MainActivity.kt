@@ -11,6 +11,7 @@ import com.smarteyex.core.memory.MemoryManager
 import com.smarteyex.core.navigation.NavigationStateManager
 import com.smarteyex.core.voice.VoiceEngine
 import com.smarteyex.core.voice.VoiceService
+import com.smarteyex.app.R
 
 class MainActivity : AppCompatActivity() {
 
