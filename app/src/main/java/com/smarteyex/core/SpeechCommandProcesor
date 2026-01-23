@@ -1,0 +1,55 @@
+package com.smarteyex.core.voice
+
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import android.speech.RecognitionListener
+import android.speech.tts.TextToSpeech
+import com.smarteyex.core.MainActivity
+import com.smarteyex.core.memory.MemoryManager
+
+class SpeechCommandProcessor(
+    private val context: Context,
+    private val tts: TextToSpeech
+) : RecognitionListener {
+
+    private val memory = MemoryManager(context)
+
+    override fun onResults(results: Bundle?) {
+        val text = results
+            ?.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION)
+            ?.firstOrNull()
+            ?: return
+
+        memory.save("voice_command", text)
+
+        when {
+            text.contains("kamera", true) -> {
+                tts.speak("Membuka kamera", TextToSpeech.QUEUE_FLUSH, null, null)
+                context.startActivity(
+                    Intent(context, MainActivity::class.java)
+                        .putExtra("open", "camera")
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            }
+
+            text.contains("halo smart eye", true) -> {
+                tts.speak("Halo Bung X, SmartEyeX aktif", TextToSpeech.QUEUE_FLUSH, null, null)
+            }
+
+            else -> {
+                tts.speak("Perintah diterima", TextToSpeech.QUEUE_FLUSH, null, null)
+            }
+        }
+    }
+
+    override fun onError(error: Int) {}
+
+    override fun onReadyForSpeech(params: Bundle?) {}
+    override fun onBeginningOfSpeech() {}
+    override fun onRmsChanged(rmsdB: Float) {}
+    override fun onBufferReceived(buffer: ByteArray?) {}
+    override fun onEndOfSpeech() {}
+    override fun onPartialResults(partialResults: Bundle?) {}
+    override fun onEvent(eventType: Int, params: Bundle?) {}
+}
