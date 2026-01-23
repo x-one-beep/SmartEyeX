@@ -1,66 +1,54 @@
-package com.smarteyex.core
+package com.smarteyex.core.voice
 
 import android.content.Context
-import android.speech.*
+import android.content.Intent
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import java.util.*
-import android.os.Bundle
-import android.content.Intent
 
-class VoiceEngine(context: Context) : TextToSpeech.OnInitListener {
+class VoiceEngine(private val context: Context) {
 
-    private val tts = TextToSpeech(context, this)
-    private val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
-    private var callback: ((String) -> Unit)? = null
+    private val speechRecognizer: SpeechRecognizer =
+        SpeechRecognizer.createSpeechRecognizer(context)
 
-    init {
-        recognizer.setRecognitionListener(object : RecognitionListener {
-            override fun onResults(results: Bundle?) {
-                val text = results
-                    ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    ?.firstOrNull()
-                text?.let { callback?.invoke(it) }
+    private val tts: TextToSpeech =
+        TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                tts.language = Locale("id", "ID")
             }
-            override fun onError(error: Int) {}
-            override fun onReadyForSpeech(p0: Bundle?) {}
-            override fun onBeginningOfSpeech() {}
-            override fun onRmsChanged(p0: Float) {}
-            override fun onBufferReceived(p0: ByteArray?) {}
-            override fun onEndOfSpeech() {}
-            override fun onPartialResults(p0: Bundle?) {}
-            override fun onEvent(p0: Int, p1: Bundle?) {}
-        })
+        }
+
+    private val processor = SpeechCommandProcessor(context, tts)
+
+    private var listening = false
+
+    fun toggleListening() {
+        if (listening) stopListening()
+        else startListening()
     }
 
-    fun startListening(onResult: (String) -> Unit) {
-    callback = onResult
+    fun startListening() {
+        listening = true
 
-    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-        putExtra(
-            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-        )
-        putExtra(
-            RecognizerIntent.EXTRA_LANGUAGE,
-            Locale.getDefault()
-        )
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
+        }
+
+        speechRecognizer.setRecognitionListener(processor)
+        speechRecognizer.startListening(intent)
     }
 
-    recognizer.startListening(intent)
+    fun stopListening() {
+        listening = false
+        speechRecognizer.stopListening()
     }
 
     fun speak(text: String) {
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "SmartEyeX")
-    }
-
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            tts.language = Locale.US
-        }
-    }
-
-    fun shutdown() {
-        recognizer.destroy()
-        tts.shutdown()
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 }
