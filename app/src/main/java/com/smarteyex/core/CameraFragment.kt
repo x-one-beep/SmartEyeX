@@ -6,7 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.camera.view.PreviewView
 import androidx.fragment.app.Fragment
-import com.smarteyex.core.R
+import com.smarteyex.app.R
 
 class CameraFragment : Fragment() {
 
