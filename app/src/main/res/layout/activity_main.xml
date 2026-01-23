@@ -1,79 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/root"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootDashboard"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#00BFFC"
+    android:background="#0B0F1A"
     android:padding="16dp">
-
-    <!--loading-->
-    <TextView
-        android:id="@+id/tvLoading"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Loading System..."
-        android:textSize="14sp"
-        android:textColor="#AAAAAA"
-        android:layout_marginTop="12dp"
-        android:alpha="0"/>
-    <!--tombol-->
-    <Button
-    android:id="@+id/btnStart"
-    android:layout_width="200dp"
-    android:layout_height="48dp"
-    android:text="ACTIVATE"
-    android:textColor="#000000"
-    android:textStyle="bold"
-    android:backgroundTint="#00FFCC"
-    android:layout_marginTop="32dp"
-    android:alpha="0"
-    android:visibility="gone"/>
-
-    <!-- bacaan -->
-    <TextView
-        android:id="@+id/tvStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="SMART EYE X"
-        android:textColor="#00FF00"
-        android:textSize="26sp"
-        android:textStyle="bold"
-        android:gravity="center"/>
-    
 
     <!-- JAM -->
     <TextView
-        android:id="@+id/tvClock"
+        android:id="@+id/txtClock"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="00:00:00"
-        android:textColor="#CCCCCC"
-        android:textSize="28sp"
-        android:textStyle="bold" />
+        android:textColor="#00E5FF"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true" />
 
-    <!-- TANGGAL -->
+    <!-- PANEL BUTTON -->
+    <GridLayout
+        android:id="@+id/panelButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:columnCount="3"
+        android:rowCount="2"
+        android:alignmentMode="alignMargins"
+        android:useDefaultMargins="true">
+
+        <ImageButton
+            android:id="@+id/btnCamera"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:background="@android:color/transparent"
+            android:src="@android:drawable/ic_menu_camera"
+            android:tint="#00E5FF" />
+
+        <ImageButton
+            android:id="@+id/btnAI"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:background="@android:color/transparent"
+            android:src="@android:drawable/ic_menu_info_details"
+            android:tint="#00E5FF" />
+
+        <ImageButton
+            android:id="@+id/btnMemory"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:background="@android:color/transparent"
+            android:src="@android:drawable/ic_menu_save"
+            android:tint="#00E5FF" />
+
+        <ImageButton
+            android:id="@+id/btnVoice"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:background="@android:color/transparent"
+            android:src="@android:drawable/ic_btn_speak_now"
+            android:tint="#00E5FF" />
+
+        <ImageButton
+            android:id="@+id/btnWA"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:background="@android:color/transparent"
+            android:src="@android:drawable/ic_dialog_email"
+            android:tint="#00E5FF" />
+
+        <ImageButton
+            android:id="@+id/btnSetting"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:background="@android:color/transparent"
+            android:src="@android:drawable/ic_menu_preferences"
+            android:tint="#00E5FF" />
+
+    </GridLayout>
+
+    <!-- HUD STATUS -->
     <TextView
-        android:id="@+id/tvDate"
+        android:id="@+id/txtStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="01 Januari 2026"
-        android:textColor="#000000"
+        android:text="SmartEyeX ACTIVE"
+        android:textColor="#00FF9C"
         android:textSize="14sp"
-        android:layout_marginBottom="12dp" />
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true" />
 
-    <!-- AREA CHAT -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fillViewport="true">
-
-        <LinearLayout
-            android:id="@+id/chatContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-    </ScrollView>
-
-</LinearLayout>
+</RelativeLayout>
