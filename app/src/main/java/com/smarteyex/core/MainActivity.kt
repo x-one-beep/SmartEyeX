@@ -1,67 +1,100 @@
 package com.smarteyex.core
 
+import android.content.Intent
 import android.os.Bundle
-import android.widget.*
+import android.widget.ImageButton
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.smarteyex.app.R
-import android.view.View
+import com.smarteyex.core.ai.GroqAiEngine
+import com.smarteyex.core.clock.ClockManager
+import com.smarteyex.core.memory.MemoryManager
+import com.smarteyex.core.navigation.NavigationStateManager
+import com.smarteyex.core.voice.VoiceEngine
+import com.smarteyex.core.voice.VoiceService
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var clock: TextView
-    private lateinit var date: TextView
-    private lateinit var chat: LinearLayout
+    // UI
+    private lateinit var txtClock: TextView
+    private lateinit var btnCamera: ImageButton
+    private lateinit var btnAI: ImageButton
+    private lateinit var btnMemory: ImageButton
+    private lateinit var btnVoice: ImageButton
+    private lateinit var btnWA: ImageButton
+    private lateinit var btnSetting: ImageButton
 
-    private lateinit var ai: GroqAiEngine
-    private lateinit var voice: VoiceEngine
+    // Core Engine
     private lateinit var clockManager: ClockManager
+    private lateinit var aiEngine: GroqAiEngine
+    private lateinit var memoryManager: MemoryManager
+    private lateinit var voiceEngine: VoiceEngine
+    private lateinit var navigation: NavigationStateManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        clock = findViewById(R.id.tvClock)
-        date = findViewById(R.id.tvDate)
-        chat = findViewById(R.id.chatContainer)
-        val btnStart=findViewById<Button>(R.id.btnStart)
-       val tvStatus=findViewById<TextView>(R.id.tvStatus)
-       
-        tvStatus.translationY = 50f
-tvStatus.alpha = 0f
+        initUI()
+        initCore()
+        initAction()
+        startBackgroundService()
+    }
 
-tvStatus.animate()
-    .translationY(0f)
-    .alpha(1f)
-    .setDuration(900)
-    .start()
-    
-        btnStart.scaleX = 0.8f
-btnStart.scaleY = 0.8f
-btnStart.alpha = 0f
-btnStart.visibility = View.VISIBLE
+    private fun initUI() {
+        txtClock = findViewById(R.id.txtClock)
 
-btnStart.animate()
-    .scaleX(1f)
-    .scaleY(1f)
-    .alpha(1f)
-    .setStartDelay(1200)
-    .setDuration(600)
-    .start()
+        btnCamera = findViewById(R.id.btnCamera)
+        btnAI = findViewById(R.id.btnAI)
+        btnMemory = findViewById(R.id.btnMemory)
+        btnVoice = findViewById(R.id.btnVoice)
+        btnWA = findViewById(R.id.btnWA)
+        btnSetting = findViewById(R.id.btnSetting)
+    }
 
-        ai = GroqAiEngine()
-        voice = VoiceEngine(this)
-        clockManager = ClockManager()
+    private fun initCore() {
+        clockManager = ClockManager(txtClock)
+        aiEngine = GroqAiEngine(this)
+        memoryManager = MemoryManager(this)
+        voiceEngine = VoiceEngine(this)
+        navigation = NavigationStateManager(this)
 
-        clockManager.start { t, d ->
-            clock.text = t
-            date.text = d
+        clockManager.start()
+    }
+
+    private fun initAction() {
+
+        btnCamera.setOnClickListener {
+            navigation.openCamera()
         }
+
+        btnAI.setOnClickListener {
+            navigation.openAI()
+        }
+
+        btnMemory.setOnClickListener {
+            navigation.openMemory()
+        }
+
+        btnVoice.setOnClickListener {
+            voiceEngine.toggleListening()
+        }
+
+        btnWA.setOnClickListener {
+            navigation.openWA()
+        }
+
+        btnSetting.setOnClickListener {
+            navigation.openSetting()
+        }
+    }
+
+    private fun startBackgroundService() {
+        val intent = Intent(this, VoiceService::class.java)
+        startService(intent)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         clockManager.stop()
-        voice.shutdown()
-        ai.destroy()
     }
 }
