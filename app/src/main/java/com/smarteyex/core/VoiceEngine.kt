@@ -12,23 +12,27 @@ class VoiceEngine(private val context: Context) {
     private val speechRecognizer: SpeechRecognizer =
         SpeechRecognizer.createSpeechRecognizer(context)
 
-    private val tts: TextToSpeech =
-        TextToSpeech(context) { status ->
+    private lateinit var tts: TextToSpeech
+    private lateinit var processor: SpeechCommandProcessor
+
+    private var listening = false
+
+    init {
+        tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 tts.language = Locale("id", "ID")
             }
         }
 
-    private val processor = SpeechCommandProcessor(context, tts)
-
-    private var listening = false
+        processor = SpeechCommandProcessor(context, tts)
+    }
 
     fun toggleListening() {
         if (listening) stopListening()
         else startListening()
     }
 
-    fun startListening() {
+    private fun startListening() {
         listening = true
 
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -43,7 +47,7 @@ class VoiceEngine(private val context: Context) {
         speechRecognizer.startListening(intent)
     }
 
-    fun stopListening() {
+    private fun stopListening() {
         listening = false
         speechRecognizer.stopListening()
     }
