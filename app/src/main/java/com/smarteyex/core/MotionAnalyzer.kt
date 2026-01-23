@@ -1,17 +1,19 @@
-package com.smarteyex.core
+package com.smarteyex.core.camera
 
-class MotionAnalyzer {
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageProxy
 
-    private var lastState = "STILL"
+class MotionAnalyzer : ImageAnalysis.Analyzer {
 
-    fun analyze(motionValue: Float): String {
-        lastState = when {
-            motionValue > 8f -> "MOVING FAST"
-            motionValue > 2f -> "MOVING"
-            else -> "STILL"
-        }
-        return lastState
+    override fun analyze(image: ImageProxy) {
+
+        // 🔹 HOOK UNTUK:
+        // - Face Detection
+        // - Motion Detection
+        // - Object Recognition
+        // - SmartEye Vision AI
+
+        // (sementara dummy agar aman & stabil)
+        image.close()
     }
-
-    fun getLastState(): String = lastState
 }
