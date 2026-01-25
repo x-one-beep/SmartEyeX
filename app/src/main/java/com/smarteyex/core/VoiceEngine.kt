@@ -33,7 +33,7 @@ class VoiceEngine(private val context: Context) {
         else startListening()
     }
 
-    private fun startListening() {
+    fun startListening() {
         listening = true
 
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -48,7 +48,7 @@ class VoiceEngine(private val context: Context) {
         speechRecognizer.startListening(intent)
     }
 
-    private fun stopListening() {
+     fun stopListening() {
         listening = false
         speechRecognizer.stopListening()
     }
