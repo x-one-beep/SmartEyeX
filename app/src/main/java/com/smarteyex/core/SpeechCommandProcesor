@@ -1,4 +1,4 @@
-package com.smarteyex.core.voice
+package com.smarteyex.core
 
 import android.content.Context
 import android.content.Intent
