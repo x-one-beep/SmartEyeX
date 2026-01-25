@@ -9,8 +9,8 @@ import com.smarteyex.core.ai.GroqAiEngine
 import com.smarteyex.core.clock.ClockManager
 import com.smarteyex.core.memory.MemoryManager
 import com.smarteyex.core.navigation.NavigationStateManager
-import com.smarteyex.core.voice.VoiceEngine
-import com.smarteyex.core.voice.VoiceService
+import com.smarteyex.core.VoiceEngine
+import com.smarteyex.core.VoiceService
 import com.smarteyex.app.R
 
 class MainActivity : AppCompatActivity() {
