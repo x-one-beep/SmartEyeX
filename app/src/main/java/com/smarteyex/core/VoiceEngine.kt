@@ -6,7 +6,7 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import java.util.*
-import com.smarteyex.core.voice.SpeechCommandProcessor
+import com.smarteyex.core.SpeechCommandProcessor
 
 class VoiceEngine(private val context: Context) {
 
