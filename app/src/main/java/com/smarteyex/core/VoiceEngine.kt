@@ -12,16 +12,21 @@ class VoiceEngine(private val context: Context) {
     private val speechRecognizer: SpeechRecognizer =
         SpeechRecognizer.createSpeechRecognizer(context)
 
-    private val tts: TextToSpeech = TextToSpeech(context) { status ->
-        if (status == TextToSpeech.SUCCESS) {
-            tts.language = Locale("id", "ID")   // ← INI YANG BENAR
-        }
-    }
+    private lateinit var tts: TextToSpeech
 
-    private val processor: SpeechCommandProcessor =
-        SpeechCommandProcessor(context, tts)
+    private lateinit var processor: SpeechCommandProcessor
 
     private var listening = false
+
+    init {
+        tts = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                tts.language = Locale("id", "ID")
+            }
+        }
+
+        processor = SpeechCommandProcessor(context, tts)
+    }
 
     fun toggleListening() {
         if (listening) stopListening()
@@ -49,6 +54,13 @@ class VoiceEngine(private val context: Context) {
     }
 
     fun speak(text: String) {
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+        if (::tts.isInitialized) {
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+        }
+    }
+
+    fun destroy() {
+        speechRecognizer.destroy()
+        tts.shutdown()
     }
 }
