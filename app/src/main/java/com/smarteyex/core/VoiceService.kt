@@ -17,6 +17,9 @@ class VoiceService : Service() {
     private lateinit var ai: GroqAiEngine
 
     private var waitingWakeWord = true
+private var waitingWaReply = false
+private lateinit var lastWaNotification: StatusBarNotification
+private lateinit var waReplyManager: WaReplyManager
 
     override fun onCreate() {
         super.onCreate()
@@ -24,6 +27,8 @@ class VoiceService : Service() {
         startForeground(99, buildNotification())
 
         ai = GroqAiEngine(this)
+
+waReplyManager = WaReplyManager()
 
         tts = TextToSpeech(this) {
             tts.language = Locale("id", "ID")
@@ -93,6 +98,19 @@ class VoiceService : Service() {
     private fun speak(text: String) {
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "SMART_EYE_X")
     }
+
+fun askUserForWaReply(
+    sbn: StatusBarNotification,
+    sender: String,
+    message: String
+) {
+    lastWaNotification = sbn
+    waitingWaReply = true
+
+    speak("Pesan WhatsApp dari $sender. Isinya $message. Silakan jawab.")
+
+    startListening()
+}
 
     override fun onDestroy() {
         recognizer.destroy()
