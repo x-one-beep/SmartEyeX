@@ -1,12 +1,27 @@
-class VoiceEngine(context: Context) {
+package com.smarteyex.core
 
-    private val tts: TextToSpeech = TextToSpeech(context) { status ->
-        if (status == TextToSpeech.SUCCESS) {
-            tts.language = Locale("id", "ID")
+import android.content.Context
+import android.speech.tts.TextToSpeech
+import java.util.Locale
+
+class VoiceEngine(private val context: Context) {
+
+    private lateinit var tts: TextToSpeech
+
+    fun init() {
+        tts = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                tts.language = Locale("id", "ID")
+            }
         }
     }
 
     fun speak(text: String) {
+        if (!::tts.isInitialized) return
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "VOICE_ENGINE")
+    }
+
+    fun shutdown() {
+        if (::tts.isInitialized) tts.shutdown()
     }
 }
