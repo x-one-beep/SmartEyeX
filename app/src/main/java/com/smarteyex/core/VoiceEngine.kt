@@ -51,3 +51,9 @@ class VoiceEngine(private val context: Context) {
         tts.shutdown()
     }
 }
+
+fun speak(text: String) {
+    if (::tts.isInitialized) {
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "VOICE_ENGINE")
+    }
+}
