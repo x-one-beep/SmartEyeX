@@ -12,44 +12,98 @@ import com.smarteyex.app.R
 
 class VoiceService : Service() {
 
-    private lateinit var voiceEngine: VoiceEngine
+    private lateinit var recognizer: SpeechRecognizer
+    private lateinit var tts: TextToSpeech
+    private lateinit var ai: GroqAiEngine
+
+    private var waitingWakeWord = true
 
     override fun onCreate() {
         super.onCreate()
-        voiceEngine = VoiceEngine(this)
-        startForegroundService()
-        voiceEngine.startListening()
+        startForeground(99, buildNotification())
+
+        ai = GroqAiEngine(this)
+
+        tts = TextToSpeech(this) {
+            tts.language = Locale("id", "ID")
+        }
+
+        recognizer = SpeechRecognizer.createSpeechRecognizer(this)
+        startListening()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY
+    private fun startListening() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+        }
+
+        recognizer.setRecognitionListener(object : RecognitionListener {
+
+            override fun onResults(results: Bundle?) {
+                val text = results
+                    ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    ?.firstOrNull()
+                    ?.lowercase()
+                    ?: return
+
+                if (waitingWakeWord) {
+                    if (text.contains("bung smart aktif")) {
+                        waitingWakeWord = false
+                        speak("Bung Smart aktif")
+                    }
+                } else {
+                    ai.ask(
+                        userText = text,
+                        onResult = {
+                            speak(it)
+                            waitingWakeWord = true
+                        },
+                        onError = {
+                            speak("AI bermasalah")
+                            waitingWakeWord = true
+                        }
+                    )
+                }
+
+                restartListening()
+            }
+
+            override fun onError(error: Int) {
+                restartListening()
+            }
+
+            override fun onReadyForSpeech(p0: Bundle?) {}
+            override fun onBeginningOfSpeech() {}
+            override fun onRmsChanged(p0: Float) {}
+            override fun onBufferReceived(p0: ByteArray?) {}
+            override fun onEndOfSpeech() {}
+            override fun onPartialResults(p0: Bundle?) {}
+            override fun onEvent(p0: Int, p1: Bundle?) {}
+        })
+
+        recognizer.startListening(intent)
+    }
+
+    private fun restartListening() {
+        recognizer.stopListening()
+        recognizer.cancel()
+        startListening()
+    }
+
+    private fun speak(text: String) {
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "SMART_EYE_X")
     }
 
     override fun onDestroy() {
+        recognizer.destroy()
+        tts.shutdown()
         super.onDestroy()
-        voiceEngine.stopListening()
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
-
-    private fun startForegroundService() {
-        val channelId = "SmartEyeXVoice"
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "SmartEyeX Voice Service",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
-        }
-
-        val notification: Notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("SmartEyeX Active")
-            .setContentText("Voice Engine berjalan di latar belakang")
-            .setSmallIcon(android.R.drawable.ic_btn_speak_now)
-            .build()
-
-        startForeground(1, notification)
-    }
+    override fun onBind(intent: Intent?) = null
 }
