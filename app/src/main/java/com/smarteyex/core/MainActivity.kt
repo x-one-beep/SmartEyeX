@@ -1,21 +1,19 @@
 package com.smarteyex.core
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.smarteyex.app.R
 import com.smarteyex.core.ai.GroqAiEngine
 import com.smarteyex.core.clock.ClockManager
 import com.smarteyex.core.memory.MemoryManager
 import com.smarteyex.core.navigation.NavigationStateManager
-import com.smarteyex.core.VoiceEngine
-import com.smarteyex.core.VoiceService
-import com.smarteyex.app.R
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
 
@@ -28,11 +26,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnWA: ImageButton
     private lateinit var btnSetting: ImageButton
 
-    // Core Engine
+    // Core
     private lateinit var clockManager: ClockManager
     private lateinit var aiEngine: GroqAiEngine
     private lateinit var memoryManager: MemoryManager
-    private lateinit var voiceEngine: VoiceEngine
     private lateinit var navigation: NavigationStateManager
 
     private val REQ_AUDIO = 1001
@@ -44,37 +41,7 @@ class MainActivity : AppCompatActivity() {
         initUI()
         initCore()
         initAction()
-        startBackgroundService()
-    }
-
-    private fun checkAudioPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.RECORD_AUDIO
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun requestAudioPermission() {
-        ActivityCompat.requestPermissions(
-            this,
-            arrayOf(Manifest.permission.RECORD_AUDIO),
-            REQ_AUDIO
-        )
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if (requestCode == REQ_AUDIO &&
-            grantResults.isNotEmpty() &&
-            grantResults[0] == PackageManager.PERMISSION_GRANTED
-        ) {
-            voiceEngine.toggleListening()
-        }
+        checkPermissionAndStartService()
     }
 
     private fun initUI() {
@@ -91,7 +58,6 @@ class MainActivity : AppCompatActivity() {
         clockManager = ClockManager(txtClock)
         aiEngine = GroqAiEngine(this)
         memoryManager = MemoryManager(this)
-        voiceEngine = VoiceEngine(this)
         navigation = NavigationStateManager(this)
         clockManager.start()
     }
@@ -101,20 +67,53 @@ class MainActivity : AppCompatActivity() {
         btnAI.setOnClickListener { navigation.openAI() }
         btnMemory.setOnClickListener { navigation.openMemory() }
 
+        // Tombol voice cuma indikator / manual restart service
         btnVoice.setOnClickListener {
-            if (checkAudioPermission()) {
-                voiceEngine.startListening()
-            } else {
-                requestAudioPermission()
-            }
+            restartVoiceService()
         }
 
         btnWA.setOnClickListener { navigation.openWA() }
         btnSetting.setOnClickListener { navigation.openSetting() }
     }
 
-    private fun startBackgroundService() {
+    private fun checkPermissionAndStartService() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            startVoiceService()
+        } else {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.RECORD_AUDIO),
+                REQ_AUDIO
+            )
+        }
+    }
+
+    private fun startVoiceService() {
         startService(Intent(this, VoiceService::class.java))
+    }
+
+    private fun restartVoiceService() {
+        stopService(Intent(this, VoiceService::class.java))
+        startVoiceService()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == REQ_AUDIO &&
+            grantResults.isNotEmpty() &&
+            grantResults[0] == PackageManager.PERMISSION_GRANTED
+        ) {
+            startVoiceService()
+        }
     }
 
     override fun onDestroy() {
