@@ -34,7 +34,7 @@
 
         <!-- ===== VOICE BACKGROUND SERVICE ===== -->
         <service
-            android:name="com.smarteyex.core.SmartEyeXService"
+            android:name="com.smarteyex.core.VoiceService"
             android:exported="false"
             android:foregroundServiceType="microphone|camera" />
 
