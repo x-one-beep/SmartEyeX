@@ -1,6 +1,7 @@
 package com.smarteyex.core.wa
 
 import android.app.PendingIntent
+import android.app.RemoteInput
 import android.os.Bundle
 import android.service.notification.StatusBarNotification
 
@@ -13,27 +14,19 @@ class WaReplyManager {
         val actions = sbn.notification.actions ?: return
 
         for (action in actions) {
-            val remoteInputs = action.remoteInputs ?: continue
+            val inputs = action.remoteInputs ?: continue
 
-            val intent = action.actionIntent
             val bundle = Bundle()
-
-            for (input in remoteInputs) {
+            for (input in inputs) {
                 bundle.putCharSequence(input.resultKey, replyText)
             }
 
-            val replyIntent = android.content.Intent()
-            android.app.RemoteInput.addResultsToIntent(
-                remoteInputs,
-                replyIntent,
-                bundle
-            )
+            val intent = android.content.Intent()
+            RemoteInput.addResultsToIntent(inputs, intent, bundle)
 
             try {
-                intent.send(null, 0, replyIntent)
-            } catch (e: PendingIntent.CanceledException) {
-                e.printStackTrace()
-            }
+                action.actionIntent.send(null, 0, intent)
+            } catch (_: PendingIntent.CanceledException) {}
         }
     }
 }
