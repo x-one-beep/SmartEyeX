@@ -52,8 +52,16 @@ class VoiceService : Service() {
                     }
                 }
                 Mode.ACTIVE -> {
-                    voice.speak("Kamu bilang $text")
-                }
+    aiEngine.ask(text,
+        onResult = { answer ->
+            voice.speak(answer) // ini baru suara jawaban Groq
+        },
+        onError = {
+            voice.speak("Maaf, gagal merespon")
+        }
+    )
+}
+
                 Mode.WA_REPLY -> {
                     waReplyManager.sendUserReply(lastWaNotification, text)
                     voice.speak("Pesan terkirim")
