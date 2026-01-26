@@ -13,28 +13,15 @@ class VoiceEngine(private val context: Context) {
     private val speechRecognizer =
         SpeechRecognizer.createSpeechRecognizer(context)
 
-    private var isListening = false
-
     private lateinit var tts: TextToSpeech
-    private val ai = GroqAiEngine(context)
     private lateinit var processor: SpeechCommandProcessor
 
-    init {
-        tts = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                tts.language = Locale("id", "ID")
-            }
+    fun init(ai: GroqAiEngine) {
+        tts = TextToSpeech(context) {
+            tts.language = Locale("id", "ID")
         }
-
         processor = SpeechCommandProcessor(context, tts, ai)
-    }
-
-    fun toggleListening() {
-        if (isListening) {
-            stopListening()
-        } else {
-            startListening()
-        }
+        speechRecognizer.setRecognitionListener(processor)
     }
 
     fun startListening() {
@@ -45,25 +32,11 @@ class VoiceEngine(private val context: Context) {
             )
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
         }
-
-        speechRecognizer.setRecognitionListener(processor)
         speechRecognizer.startListening(intent)
-        isListening = true
     }
 
-    fun stopListening() {
+    fun stop() {
         speechRecognizer.stopListening()
-        isListening = false
-    }
-
-    fun speak(text: String) {
-        if (::tts.isInitialized) {
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "VOICE_ENGINE")
-        }
-    }
-
-    fun destroy() {
-        speechRecognizer.destroy()
         tts.shutdown()
     }
 }
