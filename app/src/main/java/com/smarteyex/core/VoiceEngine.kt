@@ -9,33 +9,21 @@ import java.util.*
 
 class VoiceEngine(private val context: Context) {
 
-    private val speechRecognizer: SpeechRecognizer =
+    private val speechRecognizer =
         SpeechRecognizer.createSpeechRecognizer(context)
 
-    private lateinit var tts: TextToSpeech
-
-    private lateinit var processor: SpeechCommandProcessor
-
-    private var listening = false
-
-    init {
-        tts = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                tts.language = Locale("id", "ID")
-            }
+    private val tts = TextToSpeech(context) {
+        if (it == TextToSpeech.SUCCESS) {
+            tts.language = Locale("id", "ID")
         }
-
-        processor = SpeechCommandProcessor(context, tts)
     }
 
-    fun toggleListening() {
-        if (listening) stopListening()
-        else startListening()
-    }
+    private val ai = GroqAiEngine(context)
+
+    private val processor =
+        SpeechCommandProcessor(context, tts, ai)
 
     fun startListening() {
-        listening = true
-
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(
                 RecognizerIntent.EXTRA_LANGUAGE_MODEL,
@@ -49,18 +37,6 @@ class VoiceEngine(private val context: Context) {
     }
 
     fun stopListening() {
-        listening = false
         speechRecognizer.stopListening()
-    }
-
-    fun speak(text: String) {
-        if (::tts.isInitialized) {
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
-        }
-    }
-
-    fun destroy() {
-        speechRecognizer.destroy()
-        tts.shutdown()
     }
 }
