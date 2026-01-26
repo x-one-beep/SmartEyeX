@@ -10,10 +10,9 @@ import com.smarteyex.core.memory.MemoryManager
 
 class SpeechCommandProcessor(
     private val context: Context,
-    private val tts: TextToSpeech
+    private val tts: TextToSpeech,
+    private val ai: GroqAiEngine
 ) : RecognitionListener {
-
-    private val memory = MemoryManager(context)
 
     override fun onResults(results: Bundle?) {
         val text = results
@@ -21,30 +20,23 @@ class SpeechCommandProcessor(
             ?.firstOrNull()
             ?: return
 
-        memory.save("voice_command", text)
-
-        when {
-            text.contains("kamera", true) -> {
-                tts.speak("Membuka kamera", TextToSpeech.QUEUE_FLUSH, null, null)
-                context.startActivity(
-                    Intent(context, MainActivity::class.java)
-                        .putExtra("open", "camera")
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                )
-            }
-
-            text.contains("halo smart eye", true) -> {
-                tts.speak("Halo Bung X, SmartEyeX aktif", TextToSpeech.QUEUE_FLUSH, null, null)
-            }
-
-            else -> {
-                tts.speak("Perintah diterima", TextToSpeech.QUEUE_FLUSH, null, null)
-            }
+        if (text.contains("halo smart eye", true)) {
+            tts.speak("Ya Bung X, saya dengar", TextToSpeech.QUEUE_FLUSH, null, null)
+            return
         }
+
+        ai.ask(
+            userText = text,
+            onResult = { answer ->
+                tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "AI")
+            },
+            onError = {
+                tts.speak("Koneksi AI bermasalah", TextToSpeech.QUEUE_FLUSH, null, null)
+            }
+        )
     }
 
     override fun onError(error: Int) {}
-
     override fun onReadyForSpeech(params: Bundle?) {}
     override fun onBeginningOfSpeech() {}
     override fun onRmsChanged(rmsdB: Float) {}
