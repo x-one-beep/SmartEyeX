@@ -9,17 +9,20 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.IOException
-
+    
 class GroqAiEngine(context: Context) {
 
     private val client = OkHttpClient()
     private val memory = MemoryManager(context)
-    private val voice = VoiceEngine(context)
 
     private val API_KEY = BuildConfig.GROQ_API_KEY
     private val ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
 
-    fun ask(userText: String) {
+    fun ask(
+        userText: String,
+        onResult: (String) -> Unit,
+        onError: () -> Unit
+    ) {
 
         memory.save("user_input", userText)
 
@@ -28,7 +31,7 @@ class GroqAiEngine(context: Context) {
             put("messages", listOf(
                 JSONObject()
                     .put("role", "system")
-                    .put("content", "Kamu adalah SmartEyeX, AI futuristik, singkat dan tegas."),
+                    .put("content", "Kamu adalah SmartEyeX, AI futuristik, singkat, tegas, bahasa Indonesia."),
                 JSONObject()
                     .put("role", "user")
                     .put("content", userText)
@@ -46,12 +49,11 @@ class GroqAiEngine(context: Context) {
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                voice.speak("Koneksi AI gagal")
+                onError()
             }
 
             override fun onResponse(call: Call, response: Response) {
-                val result = response.body?.string() ?: return
-                val json = JSONObject(result)
+                val json = JSONObject(response.body?.string() ?: return)
                 val answer = json
                     .getJSONArray("choices")
                     .getJSONObject(0)
@@ -59,7 +61,7 @@ class GroqAiEngine(context: Context) {
                     .getString("content")
 
                 memory.save("ai_response", answer)
-                voice.speak(answer)
+                onResult(answer)
             }
         })
     }
