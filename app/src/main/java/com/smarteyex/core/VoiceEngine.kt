@@ -14,7 +14,7 @@ class VoiceEngine(private val context: Context) {
 
     private val tts: TextToSpeech = TextToSpeech(context) { status ->
         if (status == TextToSpeech.SUCCESS) {
-            it.language = Locale("id", "ID")
+            tts.language = Locale("id", "ID")   // ← INI YANG BENAR
         }
     }
 
