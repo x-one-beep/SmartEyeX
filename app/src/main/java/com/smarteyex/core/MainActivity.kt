@@ -34,7 +34,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var memoryManager: MemoryManager
     private lateinit var voiceEngine: VoiceEngine
     private lateinit var navigation: NavigationStateManager
-private val REQ_AUDIO = 1001
+
+    private val REQ_AUDIO = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,24 +46,39 @@ private val REQ_AUDIO = 1001
         initAction()
         startBackgroundService()
     }
-override fun onRequestPermissionsResult(
-    requestCode: Int,
-    permissions: Array<out String>,
-    grantResults: IntArray
-) {
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-    if (requestCode == REQ_AUDIO &&
-        grantResults.isNotEmpty() &&
-        grantResults[0] == PackageManager.PERMISSION_GRANTED
-    ) {
-        voiceEngine.toggleListening()
+    private fun checkAudioPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
     }
-}
+
+    private fun requestAudioPermission() {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.RECORD_AUDIO),
+            REQ_AUDIO
+        )
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == REQ_AUDIO &&
+            grantResults.isNotEmpty() &&
+            grantResults[0] == PackageManager.PERMISSION_GRANTED
+        ) {
+            voiceEngine.toggleListening()
+        }
+    }
 
     private fun initUI() {
         txtClock = findViewById(R.id.txtClock)
-
         btnCamera = findViewById(R.id.btnCamera)
         btnAI = findViewById(R.id.btnAI)
         btnMemory = findViewById(R.id.btnMemory)
@@ -77,62 +93,32 @@ override fun onRequestPermissionsResult(
         memoryManager = MemoryManager(this)
         voiceEngine = VoiceEngine(this)
         navigation = NavigationStateManager(this)
-
         clockManager.start()
     }
 
     private fun initAction() {
-
-        btnCamera.setOnClickListener {
-            navigation.openCamera()
-        }
-
-        btnAI.setOnClickListener {
-            navigation.openAI()
-        }
-
-        btnMemory.setOnClickListener {
-            navigation.openMemory()
-        }
+        btnCamera.setOnClickListener { navigation.openCamera() }
+        btnAI.setOnClickListener { navigation.openAI() }
+        btnMemory.setOnClickListener { navigation.openMemory() }
 
         btnVoice.setOnClickListener {
-    if (checkAudioPermission()) {
-        voiceEngine.toggleListening()
-    } else {
-        requestAudioPermission()
-    }
-}
-
-        btnWA.setOnClickListener {
-            navigation.openWA()
+            if (checkAudioPermission()) {
+                voiceEngine.toggleListening()
+            } else {
+                requestAudioPermission()
+            }
         }
 
-        btnSetting.setOnClickListener {
-            navigation.openSetting()
-        }
+        btnWA.setOnClickListener { navigation.openWA() }
+        btnSetting.setOnClickListener { navigation.openSetting() }
     }
 
     private fun startBackgroundService() {
-        val intent = Intent(this, VoiceService::class.java)
-        startService(intent)
+        startService(Intent(this, VoiceService::class.java))
     }
 
     override fun onDestroy() {
         super.onDestroy()
         clockManager.stop()
     }
-}
-private fun checkAudioPermission(): Boolean {
-    return ContextCompat.checkSelfPermission(
-        this,
-        Manifest.permission.RECORD_AUDIO
-    ) == PackageManager.PERMISSION_GRANTED
-}
-
-private fun requestAudioPermission() {
-    ActivityCompat.requestPermissions(
-        this,
-        arrayOf(Manifest.permission.RECORD_AUDIO),
-        REQ_AUDIO
-    )
 }
