@@ -7,6 +7,8 @@ import android.speech.RecognitionListener
 import android.speech.tts.TextToSpeech
 import com.smarteyex.core.MainActivity
 import com.smarteyex.core.memory.MemoryManager
+import com.smarteyex.core.ai.GroqAiEngine
+
 
 class SpeechCommandProcessor(
     private val context: Context,
