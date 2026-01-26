@@ -35,7 +35,7 @@ class VoiceEngine(private val context: Context) {
                 RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
             )
-            putExtra(RecognizerizerIntent.EXTRA_LANGUAGE, "id-ID")
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
         }
 
         speechRecognizer.setRecognitionListener(processor)
