@@ -9,11 +9,11 @@ import java.util.*
 
 class VoiceEngine(private val context: Context) {
 
-    private val speechRecognizer: SpeechRecognizer =
+    private val speechRecognizer =
         SpeechRecognizer.createSpeechRecognizer(context)
 
-    private lateinit var tts: TextToSpeech
-    private lateinit var processor: SpeechCommandProcessor
+    private val tts: TextToSpeech
+    private val processor: SpeechCommandProcessor
 
     private var listening = false
 
@@ -47,7 +47,7 @@ class VoiceEngine(private val context: Context) {
         speechRecognizer.startListening(intent)
     }
 
-     fun stopListening() {
+    fun stopListening() {
         listening = false
         speechRecognizer.stopListening()
     }
