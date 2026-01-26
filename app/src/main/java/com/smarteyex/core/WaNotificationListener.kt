@@ -9,18 +9,18 @@ class WaNotificationListener : NotificationListenerService() {
 
     private lateinit var voice: VoiceEngine
 
-    override fun onCreate() {
-        super.onCreate()
-        voice = VoiceEngine(this)
-    }
-
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        if (!sbn.packageName.contains("com.whatsapp")) return
+    if (!sbn.packageName.contains("com.whatsapp")) return
 
-        val extras = sbn.notification.extras
-        val title = extras.getString(Notification.EXTRA_TITLE) ?: return
-        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: return
+    val extras = sbn.notification.extras
+    val sender = extras.getString(Notification.EXTRA_TITLE) ?: return
+    val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: return
 
-        voice.speak("Pesan WhatsApp dari $title. $text")
+    val intent = Intent(this, VoiceService::class.java).apply {
+        action = "WA_MESSAGE"
+        putExtra("sender", sender)
+        putExtra("message", text)
     }
+
+    startService(intent)
 }
