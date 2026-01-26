@@ -68,9 +68,20 @@ class MainActivity : AppCompatActivity() {
         btnMemory.setOnClickListener { navigation.openMemory() }
 
         // Tombol voice cuma indikator / manual restart service
-        btnVoice.setOnClickListener {
-            restartVoiceService()
-        }
+        
+
+btnVoice.setOnClickListener {
+    if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
+        == PackageManager.PERMISSION_GRANTED
+    ) {
+        voiceEngine.startListening() // pakai method startListening() di VoiceEngine
+    } else {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(android.Manifest.permission.RECORD_AUDIO),
+            REQ_AUDIO
+        )
+    }
 
         btnWA.setOnClickListener { navigation.openWA() }
         btnSetting.setOnClickListener { navigation.openSetting() }
