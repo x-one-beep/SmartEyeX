@@ -4,7 +4,7 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.app.Notification
 import android.os.Bundle
-import com.smarteyex.core.voice.VoiceEngine
+import com.smarteyex.core.VoiceEngine
 import com.smarteyex.core.memory.MemoryManager
 
 class WaNotificationListener : NotificationListenerService() {
