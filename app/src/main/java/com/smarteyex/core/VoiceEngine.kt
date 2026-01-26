@@ -17,11 +17,15 @@ class VoiceEngine(private val context: Context) {
     }
 
     fun speak(text: String) {
-        if (!::tts.isInitialized) return
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "VOICE_ENGINE")
+        if (::tts.isInitialized) tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "VOICE_ENGINE")
     }
 
     fun shutdown() {
         if (::tts.isInitialized) tts.shutdown()
+    }
+
+    // ganti toggleListening/startListening sesuai MainActivity
+    fun startListening() {
+        speak("Bung Smart siap mendengar")
     }
 }
