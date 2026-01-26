@@ -30,6 +30,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var clockManager: ClockManager
     private lateinit var aiEngine: GroqAiEngine
     private lateinit var memoryManager: MemoryManager
+    private lateinit var voiceEngine: VoiceEngine
     private lateinit var navigation: NavigationStateManager
 
     private val REQ_AUDIO = 1001
@@ -58,6 +59,7 @@ class MainActivity : AppCompatActivity() {
         clockManager = ClockManager(txtClock)
         aiEngine = GroqAiEngine(this)
         memoryManager = MemoryManager(this)
+        voiceEngine = VoiceEngine(this)
         navigation = NavigationStateManager(this)
         clockManager.start()
     }
@@ -67,21 +69,19 @@ class MainActivity : AppCompatActivity() {
         btnAI.setOnClickListener { navigation.openAI() }
         btnMemory.setOnClickListener { navigation.openMemory() }
 
-        // Tombol voice cuma indikator / manual restart service
-        
-
-btnVoice.setOnClickListener {
-    if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
-        == PackageManager.PERMISSION_GRANTED
-    ) {
-        voiceEngine.startListening() // pakai method startListening() di VoiceEngine
-    } else {
-        ActivityCompat.requestPermissions(
-            this,
-            arrayOf(android.Manifest.permission.RECORD_AUDIO),
-            REQ_AUDIO
-        )
-    }
+        btnVoice.setOnClickListener {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                == PackageManager.PERMISSION_GRANTED
+            ) {
+                restartVoiceService()
+            } else {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.RECORD_AUDIO),
+                    REQ_AUDIO
+                )
+            }
+        }
 
         btnWA.setOnClickListener { navigation.openWA() }
         btnSetting.setOnClickListener { navigation.openSetting() }
