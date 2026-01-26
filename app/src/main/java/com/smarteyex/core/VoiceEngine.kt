@@ -7,10 +7,14 @@ import java.util.*
 class VoiceEngine(context: Context) {
 
     private val tts = TextToSpeech(context) {
-        tts.language = Locale("id","ID")
+        tts.language = Locale("id", "ID")
     }
 
     fun speak(text: String) {
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "VOICE_ENGINE")
+    }
+
+    fun shutdown() {
+        tts.shutdown()
     }
 }
