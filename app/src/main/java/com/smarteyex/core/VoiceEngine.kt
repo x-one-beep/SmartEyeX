@@ -9,23 +9,19 @@ import java.util.*
 
 class VoiceEngine(private val context: Context) {
 
-    private val speechRecognizer =
+    private val speechRecognizer: SpeechRecognizer =
         SpeechRecognizer.createSpeechRecognizer(context)
 
-    private val tts: TextToSpeech
-    private val processor: SpeechCommandProcessor
+    private val tts: TextToSpeech = TextToSpeech(context) { status ->
+        if (status == TextToSpeech.SUCCESS) {
+            it.language = Locale("id", "ID")
+        }
+    }
+
+    private val processor: SpeechCommandProcessor =
+        SpeechCommandProcessor(context, tts)
 
     private var listening = false
-
-    init {
-        tts = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                tts.language = Locale("id", "ID")
-            }
-        }
-
-        processor = SpeechCommandProcessor(context, tts)
-    }
 
     fun toggleListening() {
         if (listening) stopListening()
