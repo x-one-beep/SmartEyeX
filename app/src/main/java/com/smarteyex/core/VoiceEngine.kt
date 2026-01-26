@@ -24,7 +24,7 @@ class VoiceEngine(private val context: Context) {
         if (::tts.isInitialized) tts.shutdown()
     }
 
-    // ganti toggleListening/startListening sesuai MainActivity
+    // Method untuk MainActivity, start listening
     fun startListening() {
         speak("Bung Smart siap mendengar")
     }
