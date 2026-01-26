@@ -3,7 +3,7 @@ package com.smarteyex.core.ai
 import android.content.Context
 import com.smarteyex.app.BuildConfig
 import com.smarteyex.core.memory.MemoryManager
-import com.smarteyex.core.voice.VoiceEngine
+import com.smarteyex.core.VoiceEngine
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
