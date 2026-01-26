@@ -1,56 +1,38 @@
 package com.smarteyex.core.wa
 
-import android.content.Context
-import android.service.notification.StatusBarNotification
-import android.app.Notification
 import android.app.PendingIntent
-import android.os.Build
 import android.os.Bundle
+import android.service.notification.StatusBarNotification
 
-class WaAutoReplyManager(private val context: Context) {
+class WaReplyManager {
 
-    fun replyIfNeeded(
-        sbn: StatusBarNotification,
-        sender: String,
-        message: String
-    ) {
-        // Filter basic (bisa dikembangin ke AI nanti)
-        if (message.contains("halo", true) ||
-            message.contains("ping", true) ||
-            message.contains("assalam", true)
-        ) {
-            sendQuickReply(sbn, "Halo, ini SmartEyeX. Pesan diterima.")
-        }
-    }
-
-    private fun sendQuickReply(
+    fun sendUserReply(
         sbn: StatusBarNotification,
         replyText: String
     ) {
-        val notification = sbn.notification
-        val actions = notification.actions ?: return
+        val actions = sbn.notification.actions ?: return
 
         for (action in actions) {
-            if (action.remoteInputs != null) {
-                val intent = action.actionIntent
-                val bundle = Bundle()
+            val remoteInputs = action.remoteInputs ?: continue
 
-                for (input in action.remoteInputs) {
-                    bundle.putCharSequence(input.resultKey, replyText)
-                }
+            val intent = action.actionIntent
+            val bundle = Bundle()
 
-                val replyIntent = android.content.Intent()
-                android.app.RemoteInput.addResultsToIntent(
-                    action.remoteInputs,
-                    replyIntent,
-                    bundle
-                )
+            for (input in remoteInputs) {
+                bundle.putCharSequence(input.resultKey, replyText)
+            }
 
-                try {
-                    intent.send(context, 0, replyIntent)
-                } catch (e: PendingIntent.CanceledException) {
-                    e.printStackTrace()
-                }
+            val replyIntent = android.content.Intent()
+            android.app.RemoteInput.addResultsToIntent(
+                remoteInputs,
+                replyIntent,
+                bundle
+            )
+
+            try {
+                intent.send(null, 0, replyIntent)
+            } catch (e: PendingIntent.CanceledException) {
+                e.printStackTrace()
             }
         }
     }
