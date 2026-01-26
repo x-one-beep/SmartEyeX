@@ -13,10 +13,10 @@ class VoiceEngine(private val context: Context) {
     private val speechRecognizer =
         SpeechRecognizer.createSpeechRecognizer(context)
 
+    private var isListening = false
+
     private lateinit var tts: TextToSpeech
-
     private val ai = GroqAiEngine(context)
-
     private lateinit var processor: SpeechCommandProcessor
 
     init {
@@ -27,6 +27,14 @@ class VoiceEngine(private val context: Context) {
         }
 
         processor = SpeechCommandProcessor(context, tts, ai)
+    }
+
+    fun toggleListening() {
+        if (isListening) {
+            stopListening()
+        } else {
+            startListening()
+        }
     }
 
     fun startListening() {
@@ -40,20 +48,22 @@ class VoiceEngine(private val context: Context) {
 
         speechRecognizer.setRecognitionListener(processor)
         speechRecognizer.startListening(intent)
+        isListening = true
     }
 
     fun stopListening() {
         speechRecognizer.stopListening()
+        isListening = false
+    }
+
+    fun speak(text: String) {
+        if (::tts.isInitialized) {
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "VOICE_ENGINE")
+        }
     }
 
     fun destroy() {
         speechRecognizer.destroy()
         tts.shutdown()
-    }
-}
-
-fun speak(text: String) {
-    if (::tts.isInitialized) {
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "VOICE_ENGINE")
     }
 }
