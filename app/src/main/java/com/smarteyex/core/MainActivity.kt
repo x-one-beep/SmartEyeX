@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity() {
 
         btnVoice.setOnClickListener {
             if (checkAudioPermission()) {
-                voiceEngine.toggleListening()
+                voiceEngine.startListening()
             } else {
                 requestAudioPermission()
             }
