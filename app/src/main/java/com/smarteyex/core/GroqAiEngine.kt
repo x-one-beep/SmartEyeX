@@ -1,49 +1,50 @@
-package com.smarteyex.core
+package com.smarteyex.core.ai
 
 import android.content.Context
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import java.io.IOException
 
 class GroqAiEngine(private val context: Context) {
 
     private val client = OkHttpClient()
 
-    fun ask(prompt: String, callback: (String) -> Unit) {
-
-        val body = """
-        {
-          "model": "llama3-70b-8192",
-          "messages": [
-            {"role":"user","content":"$prompt"}
-          ]
+    fun ask(
+        prompt: String,
+        callback: (String) -> Unit
+    ) {
+        val json = JSONObject().apply {
+            put("model", "llama3-8b-8192")
+            put("messages", listOf(
+                mapOf("role" to "user", "content" to prompt)
+            ))
         }
-        """.trimIndent()
+
+        val body = json.toString()
+            .toRequestBody("application/json".toMediaType())
 
         val request = Request.Builder()
             .url("https://api.groq.com/openai/v1/chat/completions")
-            .addHeader("Authorization", "Bearer YOUR_SECRET_API_KEY")
-            .addHeader("Content-Type", "application/json")
-            .post(RequestBody.create(MediaType.get("application/json"), body))
+            .addHeader("Authorization", "Bearer API_KEY_LU")
+            .post(body)
             .build()
 
         client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: java.io.IOException) {
-                callback("Maaf Bung, koneksi bermasalah.")
+            override fun onFailure(call: Call, e: IOException) {
+                callback("Gagal terhubung ke AI")
             }
 
             override fun onResponse(call: Call, response: Response) {
-                try {
-                    val json = JSONObject(response.body()?.string() ?: "")
-                    val answer = json
-                        .getJSONArray("choices")
-                        .getJSONObject(0)
-                        .getJSONObject("message")
-                        .getString("content")
+                val res = response.body?.string() ?: ""
+                val content = JSONObject(res)
+                    .getJSONArray("choices")
+                    .getJSONObject(0)
+                    .getJSONObject("message")
+                    .getString("content")
 
-                    callback(answer)
-                } catch (e: Exception) {
-                    callback("Jawaban AI gagal diproses.")
-                }
+                callback(content)
             }
         })
     }
