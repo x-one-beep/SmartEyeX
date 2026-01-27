@@ -1,62 +1,20 @@
 package com.smarteyex.core
 
-import android.app.Service
-import android.content.Intent
-import android.os.IBinder
-import android.speech.tts.UtteranceProgressListener
+import android.content.Context
+import android.speech.tts.TextToSpeech
+import java.util.*
 
-class VoiceService : Service() {
+class VoiceEngine(context: Context) {
 
-    private lateinit var voice: VoiceEngine
-    private lateinit var ai: GroqAiEngine
-
-    override fun onCreate() {
-        super.onCreate()
-
-        voice = VoiceEngine(this)
-        ai = GroqAiEngine(this)
-
-        voice.init {
-            voice.speak("SmartEyeX aktif. Bung Smart siap.")
-        }
-
-        voice.getTts()?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-            override fun onStart(utteranceId: String?) {}
-            override fun onDone(utteranceId: String?) {}
-            override fun onError(utteranceId: String?) {}
-        })
+    private val tts = TextToSpeech(context) {
+        tts.language = Locale("id", "ID")
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
-        intent?.let {
-            when (it.action) {
-
-                "AI_ASK" -> {
-                    val question = it.getStringExtra("text") ?: return START_STICKY
-                    ai.ask(question) { answer ->
-                        voice.speak(answer)
-                    }
-                }
-
-                "WA_MESSAGE" -> {
-                    val sender = it.getStringExtra("sender") ?: "Seseorang"
-                    val msg = it.getStringExtra("message") ?: ""
-                    voice.speak("Pesan WhatsApp dari $sender. Isinya $msg")
-                    ai.ask(msg) { answer ->
-                        voice.speak(answer)
-                    }
-                }
-            }
-        }
-
-        return START_STICKY
+    fun speak(text: String) {
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 
-    override fun onDestroy() {
-        voice.shutdown()
-        super.onDestroy()
+    fun shutdown() {
+        tts.shutdown()
     }
-
-    override fun onBind(intent: Intent?): IBinder? = null
 }
