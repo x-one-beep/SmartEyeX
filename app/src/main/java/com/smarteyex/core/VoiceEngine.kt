@@ -6,14 +6,15 @@ import java.util.Locale
 
 class VoiceEngine(private val context: Context) {
 
-    private lateinit var tts: TextToSpeech  // <- HARUS ADA
+    private lateinit var tts: TextToSpeech
     private var isReady = false
 
-    fun init() {
+    fun init(onReady: (() -> Unit)? = null) {
         tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 tts.language = Locale("id", "ID")
                 isReady = true
+                onReady?.invoke()
             }
         }
     }
@@ -28,8 +29,8 @@ class VoiceEngine(private val context: Context) {
         if (::tts.isInitialized) tts.shutdown()
     }
 
-    // Method untuk MainActivity, start listening
-    fun startListening() {
-        speak("Bung Smart siap mendengar")
+    // AKSES TTS BUAT SERVICE
+    fun getTts(): TextToSpeech? {
+        return if (::tts.isInitialized) tts else null
     }
 }
