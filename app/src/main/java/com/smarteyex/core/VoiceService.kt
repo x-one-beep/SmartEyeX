@@ -7,14 +7,16 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.core.app.NotificationCompat
-import com.smarteyex.core.wa.WaReplyManager
 import android.service.notification.StatusBarNotification
+import com.smarteyex.core.ai.GroqAiEngine
+import com.smarteyex.core.wa.WaReplyManager
 
 class VoiceService : Service() {
 
     private lateinit var recognizer: SpeechRecognizer
     private lateinit var voice: VoiceEngine
     private lateinit var waReplyManager: WaReplyManager
+    private lateinit var aiEngine: GroqAiEngine   // ✅ FIX 1
 
     private enum class Mode { IDLE, ACTIVE, WA_REPLY }
     private var mode = Mode.IDLE
@@ -28,6 +30,8 @@ class VoiceService : Service() {
         voice = VoiceEngine(this)
         voice.init()
 
+        aiEngine = GroqAiEngine(this)   // ✅ FIX 1
+
         waReplyManager = WaReplyManager()
 
         recognizer = SpeechRecognizer.createSpeechRecognizer(this)
@@ -37,6 +41,7 @@ class VoiceService : Service() {
     }
 
     private val listener = object : RecognitionListener {
+
         override fun onResults(results: Bundle?) {
             val text = results
                 ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
@@ -45,22 +50,25 @@ class VoiceService : Service() {
                 ?: return
 
             when (mode) {
+
                 Mode.IDLE -> {
                     if (text.contains("bung smart aktif")) {
                         voice.speak("Bung Smart aktif")
                         mode = Mode.ACTIVE
                     }
                 }
+
                 Mode.ACTIVE -> {
-    aiEngine.ask(text,
-        onResult = { answer ->
-            voice.speak(answer) // ini baru suara jawaban Groq
-        },
-        onError = {
-            voice.speak("Maaf, gagal merespon")
-        }
-    )
-}
+                    aiEngine.ask(
+                        text,
+                        onResult = { answer ->
+                            voice.speak(answer)
+                        },
+                        onError = {
+                            voice.speak("Maaf, gagal merespon")
+                        }
+                    )
+                }
 
                 Mode.WA_REPLY -> {
                     waReplyManager.sendUserReply(lastWaNotification, text)
@@ -68,6 +76,7 @@ class VoiceService : Service() {
                     mode = Mode.IDLE
                 }
             }
+
             restartListening()
         }
 
@@ -95,14 +104,30 @@ class VoiceService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == "WA_MESSAGE") {
-            lastWaNotification = intent.getParcelableExtra("sbn")!!
-            val sender = intent.getStringExtra("sender")!!
-            val message = intent.getStringExtra("message")!!
 
-            mode = Mode.WA_REPLY
-            voice.speak("Pesan WhatsApp dari $sender. Isinya $message. Silakan jawab.")
+        when (intent?.action) {
+
+            // ✅ FIX 2 — dari MainActivity (background AI)
+            "AI_ASK" -> {
+                val text = intent.getStringExtra("text") ?: return START_STICKY
+                aiEngine.ask(
+                    text,
+                    onResult = { voice.speak(it) },
+                    onError = { voice.speak("Maaf, gagal merespon") }
+                )
+            }
+
+            // ✅ WA otomatis dibacain & dibales suara
+            "WA_MESSAGE" -> {
+                lastWaNotification = intent.getParcelableExtra("sbn")!!
+                val sender = intent.getStringExtra("sender")!!
+                val message = intent.getStringExtra("message")!!
+
+                mode = Mode.WA_REPLY
+                voice.speak("Pesan WhatsApp dari $sender. Isinya $message. Silakan jawab.")
+            }
         }
+
         return START_STICKY
     }
 
@@ -117,8 +142,13 @@ class VoiceService : Service() {
     private fun buildNotification(): Notification {
         val channelId = "SMART_EYE_X"
         if (Build.VERSION.SDK_INT >= 26) {
-            val channel = NotificationChannel(channelId, "SmartEyeX Voice", NotificationManager.IMPORTANCE_LOW)
-            getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
+            val channel = NotificationChannel(
+                channelId,
+                "SmartEyeX Voice",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            getSystemService(NotificationManager::class.java)
+                ?.createNotificationChannel(channel)
         }
 
         return NotificationCompat.Builder(this, channelId)
