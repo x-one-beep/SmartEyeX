@@ -8,7 +8,7 @@ import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationCompat
 import com.smarteyex.core.ai.GroqAiEngine
 import com.smarteyex.core.wa.WaReplyManager
-
+import com.smarteyex.core.wa.WanNotificationListener
 class VoiceService : Service() {
 
     private lateinit var recognizer: SpeechRecognizer
@@ -54,9 +54,15 @@ class VoiceService : Service() {
                 }
 
                 Mode.ACTIVE -> {
-                    aiEngine.ask(text) { answer ->
-                        voice.speak(answer)
-                    }
+                    aiEngine.ask(
+                        text,
+                        onResult = { answer ->
+                            voice.speak(answer)
+                        },
+                        onError = {
+                            voice.speak("Maaf Bung, sistem bermasalah")
+                        }
+                    )
                 }
 
                 Mode.WA_REPLY -> {
@@ -69,7 +75,10 @@ class VoiceService : Service() {
             restartListening()
         }
 
-        override fun onError(error: Int) { restartListening() }
+        override fun onError(error: Int) {
+            restartListening()
+        }
+
         override fun onReadyForSpeech(params: Bundle?) {}
         override fun onBeginningOfSpeech() {}
         override fun onRmsChanged(rmsdB: Float) {}
@@ -102,15 +111,11 @@ class VoiceService : Service() {
             "AI_ASK" -> {
                 val text = intent.getStringExtra("text") ?: return START_STICKY
                 aiEngine.ask(
-    text,
-    onResult = { answer ->
-        voice.speak(answer)
-    },
-    onError = {
-        voice.speak("Maaf, Bung. Sistem sedang bermasalah.")
-    }
-)
-            
+                    text,
+                    onResult = { voice.speak(it) },
+                    onError = { voice.speak("Maaf Bung, AI tidak merespon") }
+                )
+            }
 
             "WA_MESSAGE" -> {
                 lastWaNotification = intent.getParcelableExtra("sbn")!!
