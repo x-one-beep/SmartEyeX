@@ -132,3 +132,7 @@ class MainActivity : AppCompatActivity() {
         clockManager.stop()
     }
 }
+val i = Intent(this, VoiceService::class.java)
+i.action = "AI_ASK"
+i.putExtra("text", "halo smart eyex")
+startService(i)
