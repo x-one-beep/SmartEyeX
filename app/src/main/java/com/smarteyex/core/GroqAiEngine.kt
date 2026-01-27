@@ -13,7 +13,8 @@ class GroqAiEngine(private val context: Context) {
 
     fun ask(
         prompt: String,
-        callback: (String) -> Unit
+        onResult: (String) -> Unit,
+        onError: () -> Unit
     ) {
         val json = JSONObject().apply {
             put("model", "llama3-8b-8192")
@@ -32,19 +33,24 @@ class GroqAiEngine(private val context: Context) {
             .build()
 
         client.newCall(request).enqueue(object : Callback {
+
             override fun onFailure(call: Call, e: IOException) {
-                callback("Gagal terhubung ke AI")
+                onError()
             }
 
             override fun onResponse(call: Call, response: Response) {
-                val res = response.body?.string() ?: ""
-                val content = JSONObject(res)
-                    .getJSONArray("choices")
-                    .getJSONObject(0)
-                    .getJSONObject("message")
-                    .getString("content")
+                try {
+                    val res = response.body?.string() ?: ""
+                    val content = JSONObject(res)
+                        .getJSONArray("choices")
+                        .getJSONObject(0)
+                        .getJSONObject("message")
+                        .getString("content")
 
-                callback(content)
+                    onResult(content)
+                } catch (e: Exception) {
+                    onError()
+                }
             }
         })
     }
