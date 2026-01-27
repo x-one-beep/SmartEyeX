@@ -1,56 +1,49 @@
-package com.smarteyex.core.ai
+package com.smarteyex.core
 
 import android.content.Context
-import com.smarteyex.app.BuildConfig
 import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
-import java.io.IOException
 
-class GroqAiEngine(context: Context) {
+class GroqAiEngine(private val context: Context) {
 
     private val client = OkHttpClient()
-    private val API_KEY = BuildConfig.GROQ_API_KEY
-    private val ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
 
-    fun ask(
-        userText: String,
-        onResult: (String) -> Unit,
-        onError: () -> Unit
-    ) {
-        val payload = JSONObject().apply {
-            put("model", "llama3-70b-8192")
-            put("messages", listOf(
-                JSONObject().put("role","system")
-                    .put("content","Kamu SmartEyeX, singkat, tegas."),
-                JSONObject().put("role","user")
-                    .put("content",userText)
-            ))
+    fun ask(prompt: String, callback: (String) -> Unit) {
+
+        val body = """
+        {
+          "model": "llama3-70b-8192",
+          "messages": [
+            {"role":"user","content":"$prompt"}
+          ]
         }
-
-        val body = payload.toString()
-            .toRequestBody("application/json".toMediaType())
+        """.trimIndent()
 
         val request = Request.Builder()
-            .url(ENDPOINT)
-            .addHeader("Authorization","Bearer $API_KEY")
-            .post(body)
+            .url("https://api.groq.com/openai/v1/chat/completions")
+            .addHeader("Authorization", "Bearer YOUR_SECRET_API_KEY")
+            .addHeader("Content-Type", "application/json")
+            .post(RequestBody.create(MediaType.get("application/json"), body))
             .build()
 
-        client.newCall(request).enqueue(object: Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                onError()
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                callback("Maaf Bung, koneksi bermasalah.")
             }
 
             override fun onResponse(call: Call, response: Response) {
-                val json = JSONObject(response.body?.string() ?: return)
-                val answer = json
-                    .getJSONArray("choices")
-                    .getJSONObject(0)
-                    .getJSONObject("message")
-                    .getString("content")
-                onResult(answer)
+                try {
+                    val json = JSONObject(response.body()?.string() ?: "")
+                    val answer = json
+                        .getJSONArray("choices")
+                        .getJSONObject(0)
+                        .getJSONObject("message")
+                        .getString("content")
+
+                    callback(answer)
+                } catch (e: Exception) {
+                    callback("Jawaban AI gagal diproses.")
+                }
             }
         })
     }
