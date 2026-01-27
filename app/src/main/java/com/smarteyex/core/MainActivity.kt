@@ -65,15 +65,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initAction() {
-        btnCamera.setOnClickListener { navigation.openCamera() }
+
+        btnCamera.setOnClickListener {
+            navigation.openCamera()
+        }
+
         btnAI.setOnClickListener {
-    sendAiAsk("halo smart eyex")
-}
-        btnMemory.setOnClickListener { navigation.openMemory() }
+            sendAiAsk("halo smart eyex")
+        }
+
+        btnMemory.setOnClickListener {
+            navigation.openMemory()
+        }
 
         btnVoice.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                == PackageManager.PERMISSION_GRANTED
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.RECORD_AUDIO
+                ) == PackageManager.PERMISSION_GRANTED
             ) {
                 restartVoiceService()
             } else {
@@ -81,18 +90,25 @@ class MainActivity : AppCompatActivity() {
                     this,
                     arrayOf(Manifest.permission.RECORD_AUDIO),
                     REQ_AUDIO
-private fun sendAiAsk(text: String) {
-    val i = Intent(this, VoiceService::class.java)
-    i.action = "AI_ASK"
-    i.putExtra("text", text)
-    startService(i)
-}
                 )
             }
         }
 
-        btnWA.setOnClickListener { navigation.openWA() }
-        btnSetting.setOnClickListener { navigation.openSetting() }
+        btnWA.setOnClickListener {
+            navigation.openWA()
+        }
+
+        btnSetting.setOnClickListener {
+            navigation.openSetting()
+        }
+    }
+
+    // ✅ FIX: fungsi HARUS di luar initAction
+    private fun sendAiAsk(text: String) {
+        val i = Intent(this, VoiceService::class.java)
+        i.action = "AI_ASK"
+        i.putExtra("text", text)
+        startService(i)
     }
 
     private fun checkPermissionAndStartService() {
