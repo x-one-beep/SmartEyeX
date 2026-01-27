@@ -66,7 +66,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun initAction() {
         btnCamera.setOnClickListener { navigation.openCamera() }
-        btnAI.setOnClickListener { navigation.openAI() }
+        btnAI.setOnClickListener {
+    sendAiAsk("halo smart eyex")
+}
         btnMemory.setOnClickListener { navigation.openMemory() }
 
         btnVoice.setOnClickListener {
@@ -79,6 +81,12 @@ class MainActivity : AppCompatActivity() {
                     this,
                     arrayOf(Manifest.permission.RECORD_AUDIO),
                     REQ_AUDIO
+private fun sendAiAsk(text: String) {
+    val i = Intent(this, VoiceService::class.java)
+    i.action = "AI_ASK"
+    i.putExtra("text", text)
+    startService(i)
+}
                 )
             }
         }
@@ -132,7 +140,3 @@ class MainActivity : AppCompatActivity() {
         clockManager.stop()
     }
 }
-val i = Intent(this, VoiceService::class.java)
-i.action = "AI_ASK"
-i.putExtra("text", "halo smart eyex")
-startService(i)
