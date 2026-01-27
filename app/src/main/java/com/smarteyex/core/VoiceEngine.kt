@@ -1,36 +1,62 @@
 package com.smarteyex.core
 
-import android.content.Context
-import android.speech.tts.TextToSpeech
-import java.util.Locale
+import android.app.Service
+import android.content.Intent
+import android.os.IBinder
+import android.speech.tts.UtteranceProgressListener
 
-class VoiceEngine(private val context: Context) {
+class VoiceService : Service() {
 
-    private lateinit var tts: TextToSpeech
-    private var isReady = false
+    private lateinit var voice: VoiceEngine
+    private lateinit var ai: GroqAiEngine
 
-    fun init(onReady: (() -> Unit)? = null) {
-        tts = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                tts.language = Locale("id", "ID")
-                isReady = true
-                onReady?.invoke()
+    override fun onCreate() {
+        super.onCreate()
+
+        voice = VoiceEngine(this)
+        ai = GroqAiEngine(this)
+
+        voice.init {
+            voice.speak("SmartEyeX aktif. Bung Smart siap.")
+        }
+
+        voice.getTts()?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {}
+            override fun onDone(utteranceId: String?) {}
+            override fun onError(utteranceId: String?) {}
+        })
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
+        intent?.let {
+            when (it.action) {
+
+                "AI_ASK" -> {
+                    val question = it.getStringExtra("text") ?: return START_STICKY
+                    ai.ask(question) { answer ->
+                        voice.speak(answer)
+                    }
+                }
+
+                "WA_MESSAGE" -> {
+                    val sender = it.getStringExtra("sender") ?: "Seseorang"
+                    val msg = it.getStringExtra("message") ?: ""
+                    voice.speak("Pesan WhatsApp dari $sender. Isinya $msg")
+                    ai.ask(msg) { answer ->
+                        voice.speak(answer)
+                    }
+                }
             }
         }
+
+        return START_STICKY
     }
 
-    fun speak(text: String) {
-        if (::tts.isInitialized && isReady) {
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "VOICE_ENGINE")
-        }
+    override fun onDestroy() {
+        voice.shutdown()
+        super.onDestroy()
     }
 
-    fun shutdown() {
-        if (::tts.isInitialized) tts.shutdown()
-    }
-
-    // AKSES TTS BUAT SERVICE
-    fun getTts(): TextToSpeech? {
-        return if (::tts.isInitialized) tts else null
-    }
+    override fun onBind(intent: Intent?): IBinder? = null
 }
