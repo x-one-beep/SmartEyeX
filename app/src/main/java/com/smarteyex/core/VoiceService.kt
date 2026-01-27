@@ -3,11 +3,9 @@ package com.smarteyex.core
 import android.app.*
 import android.content.Intent
 import android.os.*
-import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
-import androidx.core.app.NotificationCompat
+import android.speech.*
 import android.service.notification.StatusBarNotification
+import androidx.core.app.NotificationCompat
 import com.smarteyex.core.ai.GroqAiEngine
 import com.smarteyex.core.wa.WaReplyManager
 
@@ -15,8 +13,8 @@ class VoiceService : Service() {
 
     private lateinit var recognizer: SpeechRecognizer
     private lateinit var voice: VoiceEngine
+    private lateinit var aiEngine: GroqAiEngine
     private lateinit var waReplyManager: WaReplyManager
-    private lateinit var aiEngine: GroqAiEngine   // ✅ FIX 1
 
     private enum class Mode { IDLE, ACTIVE, WA_REPLY }
     private var mode = Mode.IDLE
@@ -28,10 +26,7 @@ class VoiceService : Service() {
         startForeground(1, buildNotification())
 
         voice = VoiceEngine(this)
-        voice.init()
-
-        aiEngine = GroqAiEngine(this)   // ✅ FIX 1
-
+        aiEngine = GroqAiEngine(this)
         waReplyManager = WaReplyManager()
 
         recognizer = SpeechRecognizer.createSpeechRecognizer(this)
@@ -59,15 +54,9 @@ class VoiceService : Service() {
                 }
 
                 Mode.ACTIVE -> {
-                    aiEngine.ask(
-                        text,
-                        onResult = { answer ->
-                            voice.speak(answer)
-                        },
-                        onError = {
-                            voice.speak("Maaf, gagal merespon")
-                        }
-                    )
+                    aiEngine.ask(text) { answer ->
+                        voice.speak(answer)
+                    }
                 }
 
                 Mode.WA_REPLY -> {
@@ -93,7 +82,10 @@ class VoiceService : Service() {
     private fun startListening() {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
         }
         recognizer.startListening(intent)
     }
@@ -107,17 +99,13 @@ class VoiceService : Service() {
 
         when (intent?.action) {
 
-            // ✅ FIX 2 — dari MainActivity (background AI)
             "AI_ASK" -> {
                 val text = intent.getStringExtra("text") ?: return START_STICKY
-                aiEngine.ask(
-                    text,
-                    onResult = { voice.speak(it) },
-                    onError = { voice.speak("Maaf, gagal merespon") }
-                )
+                aiEngine.ask(text) { answer ->
+                    voice.speak(answer)
+                }
             }
 
-            // ✅ WA otomatis dibacain & dibales suara
             "WA_MESSAGE" -> {
                 lastWaNotification = intent.getParcelableExtra("sbn")!!
                 val sender = intent.getStringExtra("sender")!!
