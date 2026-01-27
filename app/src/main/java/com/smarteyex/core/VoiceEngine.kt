@@ -6,12 +6,18 @@ import java.util.*
 
 class VoiceEngine(context: Context) {
 
-    private val tts = TextToSpeech(context) {
-        tts.language = Locale("id", "ID")
+    private var isReady = false
+    private val tts = TextToSpeech(context) { status ->
+        if (status == TextToSpeech.SUCCESS) {
+            tts.language = Locale("id", "ID")
+            isReady = true
+        }
     }
 
     fun speak(text: String) {
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+        if (isReady) {
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "SMART_EYE_X")
+        }
     }
 
     fun shutdown() {
