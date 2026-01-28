@@ -23,10 +23,15 @@ class SpeechCommandProcessor(
             return
         }
 
-        ai.ask(text) { answer ->
-            tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "AI")
-        }
+        ai.ask(
+    text,
+    onResult = { answer: String ->
+        tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "AI")
+    },
+    onError = {
+        tts.speak("Maaf Bung, AI lagi bermasalah", TextToSpeech.QUEUE_FLUSH, null, "AI")
     }
+)
 
     override fun onError(error: Int) {}
     override fun onReadyForSpeech(params: Bundle?) {}
