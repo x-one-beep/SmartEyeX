@@ -45,6 +45,7 @@ class VoiceService : Service() {
                 ?: return
 
             when (mode) {
+
                 Mode.IDLE -> {
                     if (text.contains("bung smart aktif")) {
                         voice.speak("Bung Smart aktif")
@@ -53,15 +54,16 @@ class VoiceService : Service() {
                 }
 
                 Mode.ACTIVE -> {
-                  aiEngine.ask(
-    text,
-    onResult = { result: String ->
-        voice.speak(result)
-    },
-    onError = {
-        voice.speak("Maaf Bung, AI tidak merespon")
-    }
-)  
+                    aiEngine.ask(
+                        text,
+                        onResult = { result ->
+                            voice.speak(result)
+                        },
+                        onError = {
+                            voice.speak("Maaf Bung, AI tidak merespon")
+                        }
+                    )
+                }
 
                 Mode.WA_REPLY -> {
                     waReplyManager.sendUserReply(lastWaNotification, text)
@@ -73,7 +75,10 @@ class VoiceService : Service() {
             restartListening()
         }
 
-        override fun onError(error: Int) { restartListening() }
+        override fun onError(error: Int) {
+            restartListening()
+        }
+
         override fun onReadyForSpeech(params: Bundle?) {}
         override fun onBeginningOfSpeech() {}
         override fun onRmsChanged(rmsdB: Float) {}
@@ -100,19 +105,21 @@ class VoiceService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
         when (intent?.action) {
 
             "AI_ASK" -> {
                 val text = intent.getStringExtra("text") ?: return START_STICKY
                 aiEngine.ask(
-    text,
-    onResult = { answer: String ->
-        voice.speak(answer)
-    },
-    onError = {
-        voice.speak("Maaf Bung, sistem bermasalah")
-    }
-)
+                    text,
+                    onResult = { answer ->
+                        voice.speak(answer)
+                    },
+                    onError = {
+                        voice.speak("Maaf Bung, sistem bermasalah")
+                    }
+                )
+            }
 
             "WA_MESSAGE" -> {
                 lastWaNotification = intent.getParcelableExtra("sbn")!!
@@ -120,9 +127,12 @@ class VoiceService : Service() {
                 val message = intent.getStringExtra("message")!!
 
                 mode = Mode.WA_REPLY
-                voice.speak("Pesan WhatsApp dari $sender. Isinya $message. Silakan jawab.")
+                voice.speak(
+                    "Pesan WhatsApp dari $sender. Isinya $message. Silakan jawab."
+                )
             }
         }
+
         return START_STICKY
     }
 
@@ -136,6 +146,7 @@ class VoiceService : Service() {
 
     private fun buildNotification(): Notification {
         val channelId = "SMART_EYE_X"
+
         if (Build.VERSION.SDK_INT >= 26) {
             val channel = NotificationChannel(
                 channelId,
