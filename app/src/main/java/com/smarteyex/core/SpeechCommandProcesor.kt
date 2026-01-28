@@ -19,19 +19,30 @@ class SpeechCommandProcessor(
             ?: return
 
         if (text.contains("halo smart eye", true)) {
-            tts.speak("Ya Bung X, saya dengar", TextToSpeech.QUEUE_FLUSH, null, null)
+            tts.speak(
+                "Ya Bung X, saya dengar",
+                TextToSpeech.QUEUE_FLUSH,
+                null,
+                "WAKE"
+            )
             return
         }
 
         ai.ask(
-    text,
-    onResult = { answer: String ->
-        tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "AI")
-    },
-    onError = {
-        tts.speak("Maaf Bung, AI lagi bermasalah", TextToSpeech.QUEUE_FLUSH, null, "AI")
+            text,
+            onResult = { answer: String ->
+                tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "AI")
+            },
+            onError = {
+                tts.speak(
+                    "Maaf Bung, AI lagi bermasalah",
+                    TextToSpeech.QUEUE_FLUSH,
+                    null,
+                    "AI_ERR"
+                )
+            }
+        )
     }
-)
 
     override fun onError(error: Int) {}
     override fun onReadyForSpeech(params: Bundle?) {}
