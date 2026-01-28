@@ -8,7 +8,7 @@ import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationCompat
 import com.smarteyex.core.ai.GroqAiEngine
 import com.smarteyex.core.wa.WaReplyManager
-import com.smarteyex.core.wa.WanNotificationListener
+
 class VoiceService : Service() {
 
     private lateinit var recognizer: SpeechRecognizer
@@ -45,7 +45,6 @@ class VoiceService : Service() {
                 ?: return
 
             when (mode) {
-
                 Mode.IDLE -> {
                     if (text.contains("bung smart aktif")) {
                         voice.speak("Bung Smart aktif")
@@ -54,15 +53,9 @@ class VoiceService : Service() {
                 }
 
                 Mode.ACTIVE -> {
-                    aiEngine.ask(
-                        text,
-                        onResult = { answer ->
-                            voice.speak(answer)
-                        },
-                        onError = {
-                            voice.speak("Maaf Bung, sistem bermasalah")
-                        }
-                    )
+                    aiEngine.ask(text) { answer ->
+                        voice.speak(answer)
+                    }
                 }
 
                 Mode.WA_REPLY -> {
@@ -75,10 +68,7 @@ class VoiceService : Service() {
             restartListening()
         }
 
-        override fun onError(error: Int) {
-            restartListening()
-        }
-
+        override fun onError(error: Int) { restartListening() }
         override fun onReadyForSpeech(params: Bundle?) {}
         override fun onBeginningOfSpeech() {}
         override fun onRmsChanged(rmsdB: Float) {}
@@ -105,16 +95,11 @@ class VoiceService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
         when (intent?.action) {
 
             "AI_ASK" -> {
                 val text = intent.getStringExtra("text") ?: return START_STICKY
-                aiEngine.ask(
-                    text,
-                    onResult = { voice.speak(it) },
-                    onError = { voice.speak("Maaf Bung, AI tidak merespon") }
-                )
+                aiEngine.ask(text) { voice.speak(it) }
             }
 
             "WA_MESSAGE" -> {
@@ -126,7 +111,6 @@ class VoiceService : Service() {
                 voice.speak("Pesan WhatsApp dari $sender. Isinya $message. Silakan jawab.")
             }
         }
-
         return START_STICKY
     }
 
