@@ -53,10 +53,15 @@ class VoiceService : Service() {
                 }
 
                 Mode.ACTIVE -> {
-                    aiEngine.ask(text) { answer ->
-                        voice.speak(answer)
-                    }
-                }
+                  aiEngine.ask(
+    text,
+    onResult = { result: String ->
+        voice.speak(result)
+    },
+    onError = {
+        voice.speak("Maaf Bung, AI tidak merespon")
+    }
+)  
 
                 Mode.WA_REPLY -> {
                     waReplyManager.sendUserReply(lastWaNotification, text)
@@ -99,8 +104,15 @@ class VoiceService : Service() {
 
             "AI_ASK" -> {
                 val text = intent.getStringExtra("text") ?: return START_STICKY
-                aiEngine.ask(text) { voice.speak(it) }
-            }
+                aiEngine.ask(
+    text,
+    onResult = { answer: String ->
+        voice.speak(answer)
+    },
+    onError = {
+        voice.speak("Maaf Bung, sistem bermasalah")
+    }
+)
 
             "WA_MESSAGE" -> {
                 lastWaNotification = intent.getParcelableExtra("sbn")!!
