@@ -6,6 +6,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.IOException
+import com.smarteyex.app.BuildConfig
 
 class GroqAiEngine(private val context: Context) {
 
@@ -28,7 +29,10 @@ class GroqAiEngine(private val context: Context) {
 
         val request = Request.Builder()
             .url("https://api.groq.com/openai/v1/chat/completions")
-            .addHeader("Authorization", "Bearer API_KEY_LU")
+            .addHeader(
+    "Authorization",
+    "Bearer ${BuildConfig.GROQ_API_KEY}"
+)
             .post(body)
             .build()
 
