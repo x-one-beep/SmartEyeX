@@ -1,25 +1,21 @@
 package com.smarteyex.core
 
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognitionListener
+import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
-import com.smarteyex.core.MainActivity
-import com.smarteyex.core.memory.MemoryManager
 import com.smarteyex.core.ai.GroqAiEngine
 
-
 class SpeechCommandProcessor(
-    private val context: Context,
     private val tts: TextToSpeech,
     private val ai: GroqAiEngine
 ) : RecognitionListener {
 
     override fun onResults(results: Bundle?) {
         val text = results
-            ?.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION)
+            ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
             ?.firstOrNull()
+            ?.lowercase()
             ?: return
 
         if (text.contains("halo smart eye", true)) {
@@ -27,15 +23,9 @@ class SpeechCommandProcessor(
             return
         }
 
-        ai.ask(
-            userText = text,
-            onResult = { answer ->
-                tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "AI")
-            },
-            onError = {
-                tts.speak("Koneksi AI bermasalah", TextToSpeech.QUEUE_FLUSH, null, null)
-            }
-        )
+        ai.ask(text) { answer ->
+            tts.speak(answer, TextToSpeech.QUEUE_FLUSH, null, "AI")
+        }
     }
 
     override fun onError(error: Int) {}
