@@ -6,11 +6,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.*
 import android.speech.*
-import android.service.notification.StatusBarNotification
 import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationCompat
 import com.smarteyex.core.ai.GroqAiEngine
-import com.smarteyex.core.wa.WaReplyManager
+
 
 class VoiceService : Service() {
 
@@ -18,10 +17,8 @@ class VoiceService : Service() {
     private lateinit var voice: VoiceEngine
     private lateinit var aiEngine: GroqAiEngine
     private lateinit var waReplyManager: WaReplyManager
-
-    private enum class Mode { IDLE, ACTIVE, WA_REPLY }
-    private var mode = Mode.IDLE
-    private var lastWaNotification: StatusBarNotification? = null
+    
+    private var isActive = false
 
     override fun onCreate() {
         super.onCreate()
@@ -58,42 +55,27 @@ class VoiceService : Service() {
                 ?.firstOrNull()
                 ?.lowercase()
                 ?: return
+if (!isActive) {
 
-            when (mode) {
+    if (text.contains("bung smart aktif")) {
+        isActive = true
+        voice.speak("Bung Smart aktif")
+    }
 
-                Mode.IDLE -> {
-                    if (text.contains("bung smart aktif")) {
-                        voice.speak("Bung Smart aktif")
-                        mode = Mode.ACTIVE
-                    }
-                }
-
-                Mode.ACTIVE -> {
-                    aiEngine.ask(
-                        text,
-                        onResult = { result ->
-                            voice.speak(result)
-                        },
-                        onError = {
-                            voice.speak("Maaf Bung, AI tidak merespon")
-                        }
-                    )
-                }
-
-                Mode.WA_REPLY -> {
-                    lastWaNotification?.let { sbn ->
-                        waReplyManager.sendUserReply(sbn, text)
-                        voice.speak("Pesan terkirim")
-                    }
-                    mode = Mode.IDLE
-                }
-            }
-
-            restartListening()
-        }
+    restartListening()
+    return
+}
+if (text.isNotBlank()) {
+    recognizer.cancel()
+askAI(text)
+} else {
+    restartListening()
+}
+            
 
         override fun onError(error: Int) {
             restartListening()
+
         }
 
         override fun onReadyForSpeech(params: Bundle?) {}
@@ -104,6 +86,21 @@ class VoiceService : Service() {
         override fun onPartialResults(partialResults: Bundle?) {}
         override fun onEvent(eventType: Int, params: Bundle?) {}
     }
+private fun askAI(text: String) {
+if (!::recognizer.isInitialized) return
+    
+    aiEngine.ask(
+        text,
+        onResult = { answer ->
+            voice.speak(answer)
+            restartListening()
+        },
+        onError = {
+            voice.speak("AI tidak merespon")
+            restartListening()
+        }
+    )
+}
 
     private fun startListening() {
         if (!::recognizer.isInitialized) return
@@ -142,20 +139,7 @@ class VoiceService : Service() {
                 )
             }
 
-            "WA_MESSAGE" -> {
-                intent.getParcelableExtra<StatusBarNotification>("sbn")?.let { sbn ->
-                    lastWaNotification = sbn
-                    val sender = intent.getStringExtra("sender") ?: "teman"
-                    val message = intent.getStringExtra("message") ?: ""
-                    mode = Mode.WA_REPLY
-                    voice.speak(
-                        "Pesan WhatsApp dari $sender. Isinya $message. Silakan jawab."
-                    )
-                } ?: run {
-                    stopSelf() // kalau sbn null, hentikan service
-                }
-            }
-        }
+            
 
         return START_STICKY
     }
