@@ -1,10 +1,13 @@
 package com.smarteyex.core
 
+import android.Manifest
 import android.app.*
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.*
 import android.speech.*
 import android.service.notification.StatusBarNotification
+import androidx.core.app.ContextCompat
 import androidx.core.app.NotificationCompat
 import com.smarteyex.core.ai.GroqAiEngine
 import com.smarteyex.core.wa.WaReplyManager
@@ -18,7 +21,7 @@ class VoiceService : Service() {
 
     private enum class Mode { IDLE, ACTIVE, WA_REPLY }
     private var mode = Mode.IDLE
-    private lateinit var lastWaNotification: StatusBarNotification
+    private var lastWaNotification: StatusBarNotification? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -29,15 +32,23 @@ class VoiceService : Service() {
         aiEngine = GroqAiEngine(this)
         waReplyManager = WaReplyManager()
 
-        try {
-    recognizer = SpeechRecognizer.createSpeechRecognizer(this)
-    recognizer.setRecognitionListener(listener)
-    startListening()
-} catch (e: Exception) {
-    voice.speak("Voice engine gagal dijalankan")
-    stopSelf()
-}
-}
+        // ✅ Pastikan mic permission dulu
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            try {
+                recognizer = SpeechRecognizer.createSpeechRecognizer(this)
+                recognizer.setRecognitionListener(listener)
+                startListening()
+            } catch (e: Exception) {
+                voice.speak("Voice engine gagal dijalankan")
+                stopSelf()
+            }
+        } else {
+            voice.speak("Izin mikrofon belum diberikan")
+            stopSelf()
+        }
+    }
 
     private val listener = object : RecognitionListener {
 
@@ -70,8 +81,10 @@ class VoiceService : Service() {
                 }
 
                 Mode.WA_REPLY -> {
-                    waReplyManager.sendUserReply(lastWaNotification, text)
-                    voice.speak("Pesan terkirim")
+                    lastWaNotification?.let { sbn ->
+                        waReplyManager.sendUserReply(sbn, text)
+                        voice.speak("Pesan terkirim")
+                    }
                     mode = Mode.IDLE
                 }
             }
@@ -93,6 +106,8 @@ class VoiceService : Service() {
     }
 
     private fun startListening() {
+        if (!::recognizer.isInitialized) return
+
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
             putExtra(
@@ -104,8 +119,10 @@ class VoiceService : Service() {
     }
 
     private fun restartListening() {
-        recognizer.cancel()
-        startListening()
+        if (::recognizer.isInitialized) {
+            recognizer.cancel()
+            startListening()
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -126,14 +143,18 @@ class VoiceService : Service() {
             }
 
             "WA_MESSAGE" -> {
-                lastWaNotification = intent.getParcelableExtra("sbn")!!
-                val sender = intent.getStringExtra("sender")!!
-                val message = intent.getStringExtra("message")!!
-
-                mode = Mode.WA_REPLY
-                voice.speak(
-                    "Pesan WhatsApp dari $sender. Isinya $message. Silakan jawab."
-                )
+                intent.getParcelableExtra<StatusBarNotification>("sbn")?.let { sbn ->
+                    lastWaNotification = sbn
+                    val sender = intent.getStringExtra("sender") ?: "teman"
+                    val message = intent.getStringExtra("message") ?: ""
+                    mode = Mode.WA_REPLY
+                    voice.speak(
+                        "Pesan WhatsApp dari $sender. Isinya $message. Silakan jawab."
+                    )
+                } ?: run {
+                    // Kalau sbn null, hentikan service biar gak crash
+                    stopSelf()
+                }
             }
         }
 
@@ -141,7 +162,7 @@ class VoiceService : Service() {
     }
 
     override fun onDestroy() {
-        recognizer.destroy()
+        if (::recognizer.isInitialized) recognizer.destroy()
         voice.shutdown()
         super.onDestroy()
     }
