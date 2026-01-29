@@ -9,7 +9,7 @@ import android.speech.*
 import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationCompat
 import com.smarteyex.core.ai.GroqAiEngine
-
+import com.smarteyex.core.wa.WaReplyManager
 
 class VoiceService : Service() {
 
@@ -17,7 +17,7 @@ class VoiceService : Service() {
     private lateinit var voice: VoiceEngine
     private lateinit var aiEngine: GroqAiEngine
     private var isActive = false
-var conversationBusy = false
+
     override fun onCreate() {
         super.onCreate()
 
@@ -43,32 +43,49 @@ var conversationBusy = false
             stopSelf()
         }
     }
+ private val listener = object : RecognitionListener {
+    override fun onResults(results: Bundle?) {
 
-    private val listener = object : RecognitionListener {
+    val text = results
+        ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+        ?.firstOrNull()
+        ?.lowercase()
+        ?: return
 
-        override fun onResults(results: Bundle?) {
-            val text = results
-                ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                ?.firstOrNull()
-                ?.lowercase()
-                ?: return
-WaReplyManager.onVoice(text)
-if (!isActive) {
+    // 🔥 PRIORITAS WA
+    WaReplyManager.onVoice(text)
 
-    if (text.contains("bung smart aktif")) {
-        isActive = true
-        voice.speak("Bung Smart aktif")
+    // 👉 Kalau WA sedang aktif, STOP di sini
+    if (com.smarteyex.core.wa.waMode) {
+        restartListening()
+        return
     }
 
-    restartListening()
-    return
-}
-if (text.isNotBlank()) {
-    recognizer.cancel()
-    askAI(text)
-} else {
-    restartListening()
-}
+    // ================================
+    // MODE AKTIVASI
+    // ================================
+
+    if (!isActive) {
+
+        if (text.contains("bung smart aktif")) {
+            isActive = true
+            voice.speak("Bung Smart aktif")
+        }
+
+        restartListening()
+        return
+    }
+
+    // ================================
+    // MODE AI NORMAL
+    // ================================
+
+    if (text.isNotBlank()) {
+        recognizer.cancel()
+        askAI(text)
+    } else {
+        restartListening()
+    }
 }
             
 
@@ -146,10 +163,14 @@ putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
     }
 
     override fun onDestroy() {
-        if (::recognizer.isInitialized) recognizer.destroy()
-        voice.shutdown()
-        super.onDestroy()
-    }
+        if (::recognizer.isInitialized) {
+    recognizer.stopListening()
+    recognizer.cancel()
+    recognizer.destroy()
+}
+voice.shutdown()
+    super.onDestroy()
+}
 
     override fun onBind(intent: Intent?) = null
 
