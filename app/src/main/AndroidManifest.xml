@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- ===== PERMISSIONS DASAR (AMAN BUILD) ===== -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
-    <!-- Untuk WA Notification Listener -->
-    <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />
 
     <application
         android:allowBackup="true"
@@ -19,7 +15,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
-        <!-- ===== MAIN ACTIVITY ===== -->
         <activity
             android:name="com.smarteyex.core.MainActivity"
             android:exported="true"
@@ -32,13 +27,11 @@
 
         </activity>
 
-        <!-- ===== VOICE BACKGROUND SERVICE ===== -->
         <service
             android:name="com.smarteyex.core.VoiceService"
             android:exported="false"
-            android:foregroundServiceType="microphone|camera" />
+            android:foregroundServiceType="microphone" />
 
-        <!-- ===== WHATSAPP NOTIFICATION LISTENER ===== -->
         <service
             android:name="com.smarteyex.core.WaNotificationListener"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
@@ -51,5 +44,4 @@
         </service>
 
     </application>
-
 </manifest>
