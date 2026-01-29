@@ -152,8 +152,7 @@ class VoiceService : Service() {
                         "Pesan WhatsApp dari $sender. Isinya $message. Silakan jawab."
                     )
                 } ?: run {
-                    // Kalau sbn null, hentikan service biar gak crash
-                    stopSelf()
+                    stopSelf() // kalau sbn null, hentikan service
                 }
             }
         }
@@ -172,7 +171,7 @@ class VoiceService : Service() {
     private fun buildNotification(): Notification {
         val channelId = "SMART_EYE_X"
 
-        if (Build.VERSION.SDK_INT >= 26) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
                 "SmartEyeX Voice",
