@@ -2,6 +2,8 @@ package com.smarteyex.core.wa
 
 import com.smarteyex.core.VoiceService
 
+var waMode:Boolean = false
+
 data class WaChat(
     val sender:String,
     val msg:String,
@@ -17,7 +19,7 @@ object WaReplyManager {
     private var waitReply=false
 
     fun onIncoming(sender:String,msg:String,isGroup:Boolean,group:String?) {
-
+waMode = true
         queue.add(WaChat(sender,msg,isGroup,group))
 
         if(queue.size>1){
@@ -32,6 +34,7 @@ object WaReplyManager {
 
     fun onVoice(spoken:String){
 
+        if(!waMode) return
         if(waitSelect){
             val i = parseNumber(spoken)
             if(i>=0){
@@ -69,16 +72,37 @@ object WaReplyManager {
     }
 
     private fun send(text:String){
+    if(selected >= 0){
         WaSender.send(text)
-        clear()
     }
+    clear()
+}
 
     private fun clear(){
-        queue.clear()
-        selected=-1
-        waitReply=false
-        waitSelect=false
+    queue.clear()
+    selected = -1
+    waitReply = false
+    waitSelect = false
+    waMode = false   // ⬅ MATIKAN MODE WA
+}
+
+private var silentQueue = mutableListOf<WaChat>()
+
+fun queueSilent(s:String,m:String,g:Boolean,gr:String?){
+    silentQueue.add(WaChat(s,m,g,gr))
+}
+
+fun flushSilent(){
+    if(silentQueue.isNotEmpty()){
+waMode = true
+        queue.addAll(silentQueue)
+        silentQueue.clear()
+        selected = 0
+        VoiceService.speakGlobal("Wait, ada WhatsApp masuk")
+        speakChat(queue[0])
+        waitReply = true
     }
+}
 
     private fun parseNumber(t:String):Int{
         return when{
