@@ -18,6 +18,10 @@ class VoiceService : Service() {
     private lateinit var aiEngine: GroqAiEngine
     private var isActive = false
 
+    object AppState {
+        var isSpeaking = false  // track AI/WA TTS lagi jalan
+    }
+
     override fun onCreate() {
         super.onCreate()
 
@@ -25,8 +29,7 @@ class VoiceService : Service() {
 
         voice = VoiceEngine(this)
         aiEngine = GroqAiEngine(this)
-        
-        // ✅ Pastikan mic permission dulu
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             == PackageManager.PERMISSION_GRANTED
         ) {
@@ -43,55 +46,51 @@ class VoiceService : Service() {
             stopSelf()
         }
     }
- private val listener = object : RecognitionListener {
-    override fun onResults(results: Bundle?) {
 
-    val text = results
-        ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-        ?.firstOrNull()
-        ?.lowercase()
-        ?: return
+    private val listener = object : RecognitionListener {
+        override fun onResults(results: Bundle?) {
+            val text = results
+                ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                ?.firstOrNull()
+                ?.lowercase()
+                ?: return
 
-    // 🔥 PRIORITAS WA
-    WaReplyManager.onVoice(text)
+            // ✅ WA / AI TTS sedang jalan → queue aja
+            if (AppState.isSpeaking || WaReplyManager.isBusy) {
+                WaReplyManager.queueVoice(text)
+                return
+            }
 
-    // 👉 Kalau WA sedang aktif, STOP di sini
-    if (com.smarteyex.core.wa.waMode) {
-        restartListening()
-        return
-    }
+            // ================================
+            // MODE AKTIVASI
+            // ================================
+            if (!isActive && text.contains("bung smart aktif")) {
+                isActive = true
+                AppState.isSpeaking = true
+                voice.speak("Bung Smart aktif") {
+                    AppState.isSpeaking = false
+                    restartListening()
+                }
+                return
+            }
 
-    // ================================
-    // MODE AKTIVASI
-    // ================================
-
-    if (!isActive) {
-
-        if (text.contains("bung smart aktif")) {
-            isActive = true
-            voice.speak("Bung Smart aktif")
+            // ================================
+            // MODE AI NORMAL
+            // ================================
+            if (text.isNotBlank()) {
+                try {
+                    recognizer.cancel()
+                    askAI(text)
+                } catch (e: Exception) {
+                    restartListening()
+                }
+            } else {
+                restartListening()
+            }
         }
-
-        restartListening()
-        return
-    }
-
-    // ================================
-    // MODE AI NORMAL
-    // ================================
-
-    if (text.isNotBlank()) {
-        recognizer.cancel()
-        askAI(text)
-    } else {
-        restartListening()
-    }
-}
-            
 
         override fun onError(error: Int) {
             restartListening()
-
         }
 
         override fun onReadyForSpeech(params: Bundle?) {}
@@ -102,34 +101,50 @@ class VoiceService : Service() {
         override fun onPartialResults(partialResults: Bundle?) {}
         override fun onEvent(eventType: Int, params: Bundle?) {}
     }
-private fun askAI(text: String) {
-if (!::recognizer.isInitialized) return
-    
-    aiEngine.ask(
-        text,
-        onResult = { answer ->
-            voice.speak(answer)
-            restartListening()
-        },
-        onError = {
-            voice.speak("AI tidak merespon")
+
+    private fun askAI(text: String) {
+        if (!::recognizer.isInitialized) return
+        AppState.isSpeaking = true
+        try {
+            aiEngine.ask(
+                text,
+                onResult = { answer ->
+                    voice.speak(answer) {
+                        AppState.isSpeaking = false
+                        restartListening()
+                    }
+                },
+                onError = {
+                    voice.speak("AI tidak merespon") {
+                        AppState.isSpeaking = false
+                        restartListening()
+                    }
+                }
+            )
+        } catch (e: Exception) {
+            AppState.isSpeaking = false
             restartListening()
         }
-    )
-}
+    }
 
     private fun startListening() {
         if (!::recognizer.isInitialized) return
-
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
-            putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-            )
-putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
+        try {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
+                putExtra(
+                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                )
+                putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
+                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            }
+            recognizer.startListening(intent)
+        } catch (e: Exception) {
+            voice.speak("Gagal memulai listening") {
+                restartListening()
+            }
         }
-        recognizer.startListening(intent)
     }
 
     private fun restartListening() {
@@ -140,43 +155,29 @@ putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
         when (intent?.action) {
-
             "AI_ASK" -> {
                 val text = intent.getStringExtra("text") ?: return START_STICKY
-                aiEngine.ask(
-                    text,
-                    onResult = { answer ->
-                        voice.speak(answer)
-                    },
-                    onError = {
-                        voice.speak("Maaf Bung, sistem bermasalah")
-                    }
-                )
+                askAI(text)
             }
-}
-
-            
-
+        }
         return START_STICKY
     }
 
     override fun onDestroy() {
         if (::recognizer.isInitialized) {
-    recognizer.stopListening()
-    recognizer.cancel()
-    recognizer.destroy()
-}
-voice.shutdown()
-    super.onDestroy()
-}
+            recognizer.stopListening()
+            recognizer.cancel()
+            recognizer.destroy()
+        }
+        if (::voice.isInitialized) voice.shutdown()
+        super.onDestroy()
+    }
 
     override fun onBind(intent: Intent?) = null
 
     private fun buildNotification(): Notification {
         val channelId = "SMART_EYE_X"
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
@@ -186,10 +187,11 @@ voice.shutdown()
             getSystemService(NotificationManager::class.java)
                 ?.createNotificationChannel(channel)
         }
-
         return NotificationCompat.Builder(this, channelId)
             .setContentTitle("SmartEyeX aktif")
             .setContentText("Mendengarkan Bung Smart")
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setSmallIcon(android.R.drawable.ic_btn_speak_now)
             .build()
     }
