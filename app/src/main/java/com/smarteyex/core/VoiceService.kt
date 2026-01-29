@@ -17,7 +17,7 @@ class VoiceService : Service() {
     private lateinit var voice: VoiceEngine
     private lateinit var aiEngine: GroqAiEngine
     private var isActive = false
-
+var conversationBusy = false
     override fun onCreate() {
         super.onCreate()
 
@@ -52,6 +52,7 @@ class VoiceService : Service() {
                 ?.firstOrNull()
                 ?.lowercase()
                 ?: return
+WaReplyManager.onVoice(text)
 if (!isActive) {
 
     if (text.contains("bung smart aktif")) {
