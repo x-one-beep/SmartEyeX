@@ -7,7 +7,7 @@ import android.content.pm.PackageManager
 import android.os.*
 import android.speech.*
 import android.service.notification.StatusBarNotification
-import androidx.core.app.ContextCompat
+import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationCompat
 import com.smarteyex.core.ai.GroqAiEngine
 import com.smarteyex.core.wa.WaReplyManager
