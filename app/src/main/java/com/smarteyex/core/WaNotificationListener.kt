@@ -2,7 +2,7 @@ package com.smarteyex.core.wa
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-
+import com.smarteyex.core.AppState
 object WaBus {
     var onMessage:(String,String,Boolean,String?)->Unit = {_,_,_,_->}
 }
