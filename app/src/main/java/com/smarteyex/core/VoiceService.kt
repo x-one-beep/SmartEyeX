@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationCompat
 import com.smarteyex.core.ai.GroqAiEngine
 import com.smarteyex.core.wa.WaReplyManager
+import com.smarteyex.core.AppState
 
 class VoiceService : Service() {
 
