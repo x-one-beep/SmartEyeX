@@ -16,8 +16,6 @@ class VoiceService : Service() {
     private lateinit var recognizer: SpeechRecognizer
     private lateinit var voice: VoiceEngine
     private lateinit var aiEngine: GroqAiEngine
-    private lateinit var waReplyManager: WaReplyManager
-    
     private var isActive = false
 
     override fun onCreate() {
@@ -27,8 +25,7 @@ class VoiceService : Service() {
 
         voice = VoiceEngine(this)
         aiEngine = GroqAiEngine(this)
-        waReplyManager = WaReplyManager()
-
+        
         // ✅ Pastikan mic permission dulu
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             == PackageManager.PERMISSION_GRANTED
@@ -67,9 +64,10 @@ if (!isActive) {
 }
 if (text.isNotBlank()) {
     recognizer.cancel()
-askAI(text)
+    askAI(text)
 } else {
     restartListening()
+}
 }
             
 
@@ -111,6 +109,7 @@ if (!::recognizer.isInitialized) return
                 RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
             )
+putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
         }
         recognizer.startListening(intent)
     }
@@ -138,6 +137,7 @@ if (!::recognizer.isInitialized) return
                     }
                 )
             }
+}
 
             
 
