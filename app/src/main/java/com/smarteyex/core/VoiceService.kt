@@ -29,11 +29,14 @@ class VoiceService : Service() {
         aiEngine = GroqAiEngine(this)
         waReplyManager = WaReplyManager()
 
-        recognizer = SpeechRecognizer.createSpeechRecognizer(this)
-        recognizer.setRecognitionListener(listener)
-
-        startListening()
-    }
+        try {
+    recognizer = SpeechRecognizer.createSpeechRecognizer(this)
+    recognizer.setRecognitionListener(listener)
+    startListening()
+} catch (e: Exception) {
+    voice.speak("Voice engine gagal dijalankan")
+    stopSelf()
+}
 
     private val listener = object : RecognitionListener {
 
