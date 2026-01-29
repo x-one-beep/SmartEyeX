@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Build
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -93,6 +94,16 @@ class MainActivity : AppCompatActivity() {
                 )
             }
         }
+if (Build.VERSION.SDK_INT >= 33) {
+    if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+        != PackageManager.PERMISSION_GRANTED
+    ) {
+        requestPermissions(
+            arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+            2001
+        )
+    }
+}
 
         btnWA.setOnClickListener {
             navigation.openWA()
