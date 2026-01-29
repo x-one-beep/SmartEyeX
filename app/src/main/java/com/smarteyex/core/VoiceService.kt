@@ -37,6 +37,7 @@ class VoiceService : Service() {
     voice.speak("Voice engine gagal dijalankan")
     stopSelf()
 }
+}
 
     private val listener = object : RecognitionListener {
 
