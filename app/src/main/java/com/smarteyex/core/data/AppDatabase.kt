@@ -1,4 +1,4 @@
-package com.smarteyex.core
+package com.smarteyex.core.memory
 
 import android.content.Context
 import androidx.room.Database
@@ -6,22 +6,27 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [...],
+    entities = [MemoryEntity::class],
     version = 1,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun eventDao(): EventDao
+
+    abstract fun memoryDao(): MemoryDao
 
     companion object {
-        private const val DB_NAME = "smartey_db"
-        @Volatile private var instance: AppDatabase? = null
+        @Volatile
+        private var INSTANCE: AppDatabase? = null
 
         fun getInstance(context: Context): AppDatabase {
-            return instance ?: synchronized(this) {
-                instance ?: Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, DB_NAME)
-                    .fallbackToDestructiveMigration()
-                    .build().also { instance = it }
+            return INSTANCE ?: synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    "smarteyex_db"
+                ).build()
+                INSTANCE = instance
+                instance
             }
         }
     }
