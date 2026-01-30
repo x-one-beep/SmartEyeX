@@ -1,6 +1,6 @@
 package com.smarteyex.core.wa
 
-import com.smarteyex.core.VoiceService
+import com.smarteyex.core.AppSpeak
 
 var waMode:Boolean = false
 
@@ -17,14 +17,25 @@ object WaReplyManager {
     private var selected = -1
     private var waitSelect=false
     private var waitReply=false
+var isBusy = false
+private val voiceQueue = mutableListOf<String>()
+
+    fun queueVoice(text: String) {
+        voiceQueue.add(text)
+if(spoken.isBlank()) return
+if(waMode){
+    onVoice(text)
+}
+    }
 
     fun onIncoming(sender:String,msg:String,isGroup:Boolean,group:String?) {
+isBusy = true
 waMode = true
         queue.add(WaChat(sender,msg,isGroup,group))
 
         if(queue.size>1){
             waitSelect=true
-            VoiceService.speakGlobal("Ada ${queue.size} pesan. Mau balas nomor berapa?")
+            AppSpeak.speak("Ada ${queue.size} pesan. Mau balas nomor berapa?")
         }else{
             selected=0
             waitReply=true
@@ -49,10 +60,13 @@ waMode = true
         if(waitReply){
 
             when{
-                spoken.startsWith("read") -> { clear() }
+                spoken.startsWith("read") -> {
+ isBusy = false
+clear() }
 
                 spoken.startsWith("tunggu") -> {
                     DelayManager.set(spoken)
+isBusy = false
                 }
 
                 spoken.startsWith("jawab") -> {
@@ -65,25 +79,29 @@ waMode = true
     }
 
     private fun speakChat(c:WaChat){
+isBusy = true
         if(c.isGroup)
-            VoiceService.speakGlobal("Grup ${c.group}. ${c.sender} bilang ${c.msg}")
+    AppSpeak.speak("Grup ${c.group ?: "tidak dikenal"}. ${c.sender} bilang ${c.msg}")
         else
-            VoiceService.speakGlobal("Dari ${c.sender}. ${c.msg}")
+         AppSpeak.speak("Dari ${c.sender}. ${c.msg}")
     }
 
     private fun send(text:String){
     if(selected >= 0){
         WaSender.send(text)
     }
-    clear()
+    isBusy = false
+clear()
 }
 
     private fun clear(){
     queue.clear()
+voiceQueue.clear()
     selected = -1
     waitReply = false
     waitSelect = false
     waMode = false   // ⬅ MATIKAN MODE WA
+isBusy = false
 }
 
 private var silentQueue = mutableListOf<WaChat>()
@@ -95,10 +113,11 @@ fun queueSilent(s:String,m:String,g:Boolean,gr:String?){
 fun flushSilent(){
     if(silentQueue.isNotEmpty()){
 waMode = true
+isBusy = true
         queue.addAll(silentQueue)
         silentQueue.clear()
         selected = 0
-        VoiceService.speakGlobal("Wait, ada WhatsApp masuk")
+        AppSpeak.speak("Wait, ada WhatsApp masuk")
         speakChat(queue[0])
         waitReply = true
     }
