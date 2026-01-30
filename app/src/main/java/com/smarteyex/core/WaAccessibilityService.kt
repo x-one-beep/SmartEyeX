@@ -2,6 +2,7 @@ package com.smarteyex.core.wa
 
 import android.accessibilityservice.AccessibilityService
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityNodeInfo
 
 class WaAccessibilityService: AccessibilityService() {
 
