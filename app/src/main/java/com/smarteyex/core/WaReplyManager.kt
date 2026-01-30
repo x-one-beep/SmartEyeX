@@ -44,8 +44,8 @@ waMode = true
     }
 
     fun onVoice(spoken:String){
-
-        if(!waMode) return
+if(spoken.isBlank()) return
+  if(!waMode) return
         if(waitSelect){
             val i = parseNumber(spoken)
             if(i>=0){
