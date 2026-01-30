@@ -22,7 +22,7 @@ val title = extras.getCharSequence("android.title")?.toString() ?: return
         val isGroup = title.contains(":")
         val sender = if(isGroup) title.substringAfter(":").trim() else title
         val group = if(isGroup) title.substringBefore(":") else null
-if(AppState.speaking){
+if(AppState.isSpeaking){
     WaReplyManager.queueSilent(sender,msg,isGroup,group)
 }else{
     WaReplyManager.onIncoming(sender,msg,isGroup,group)
