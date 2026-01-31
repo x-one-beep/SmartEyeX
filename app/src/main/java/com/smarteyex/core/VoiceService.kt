@@ -19,10 +19,6 @@ class VoiceService : Service() {
     private lateinit var aiEngine: GroqAiEngine
     private var isActive = false
 
-    object AppState {
-        var isSpeaking = false  // track AI/WA TTS lagi jalan
-    }
-
     override fun onCreate() {
         super.onCreate()
 
@@ -39,11 +35,11 @@ class VoiceService : Service() {
                 recognizer.setRecognitionListener(listener)
                 startListening()
             } catch (e: Exception) {
-                voice.speak("Voice engine gagal dijalankan")
+                voice.speak("Voice engine gagal dijalankan") { /* kosong */ }
                 stopSelf()
             }
         } else {
-            voice.speak("Izin mikrofon belum diberikan")
+            voice.speak("Izin mikrofon belum diberikan") { /* kosong */ }
             stopSelf()
         }
     }
@@ -142,9 +138,7 @@ class VoiceService : Service() {
             }
             recognizer.startListening(intent)
         } catch (e: Exception) {
-            voice.speak("Gagal memulai listening") {
-                restartListening()
-            }
+            voice.speak("Gagal memulai listening") { /* kosong */ restartListening() }
         }
     }
 
