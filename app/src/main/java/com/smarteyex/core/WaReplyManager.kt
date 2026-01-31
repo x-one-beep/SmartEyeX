@@ -149,7 +149,7 @@ object WaReplyManager {
     // SILENT QUEUE
     // ===============================
 
-    private fun queueSilent(s:String,m:String,g:Boolean,gr:String?){
+    fun queueSilent(s:String,m:String,g:Boolean,gr:String?){
         silentQueue.add(WaChat(s,m,g,gr))
     }
 
