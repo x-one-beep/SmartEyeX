@@ -23,11 +23,19 @@ android {
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        val secretsProps = Properties().apply {
+    val f = rootProject.file("app/secrets.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
+android {
+    defaultConfig {
         buildConfigField(
-    "String",
-    "GROQ_API_KEY",
-    "\"${System.getenv("GROQ_API_KEY") ?: ""}\""
-    )
+            "String",
+            "GROQ_API_KEY",
+            "\"${secretsProps["GROQ_API_KEY"] ?: ""}\""
+        )
+    }
 }
 
     buildFeatures {
