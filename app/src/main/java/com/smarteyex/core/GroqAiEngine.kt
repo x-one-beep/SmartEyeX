@@ -24,7 +24,7 @@ class GroqAiEngine(private val context: Context) {
     }
 
     val json = JSONObject().apply {
-        put("model", "llama3-8b-8192")
+        put("model", "llama-3.3-70b-versatile")
         put("messages", listOf(
             mapOf("role" to "user", "content" to prompt)
         ))
