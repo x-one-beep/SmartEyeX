@@ -9,7 +9,11 @@ object AppSpeak {
         voice = VoiceEngine(context)
     }
 
-    fun speak(text: String) {
-        voice.speak(text)
+    fun speak(text: String, onDone: (() -> Unit)? = null) {
+        if(onDone != null){
+            voice.speak(text, onDone)
+        } else {
+            voice.speak(text) { /* kosong */ }
+        }
     }
 }
