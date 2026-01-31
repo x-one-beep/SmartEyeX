@@ -8,9 +8,20 @@ class VoiceEngine(context: Context) : TextToSpeech.OnInitListener {
 
     private lateinit var tts: TextToSpeech
     private var isReady: Boolean = false
+    private val callbackMap = mutableMapOf<String, () -> Unit>()  // simpan callback
 
     init {
         tts = TextToSpeech(context, this)
+        tts.setOnUtteranceProgressListener(object : TextToSpeech.UtteranceProgressListener() {
+            override fun onDone(utteranceId: String?) {
+                utteranceId?.let {
+                    callbackMap[it]?.invoke()
+                    callbackMap.remove(it)
+                }
+            }
+            override fun onError(utteranceId: String?) {}
+            override fun onStart(utteranceId: String?) {}
+        })
     }
 
     override fun onInit(status: Int) {
@@ -20,17 +31,12 @@ class VoiceEngine(context: Context) : TextToSpeech.OnInitListener {
         }
     }
 
-    fun speak(text: String) {
-        if (!isReady) return
-
-        tts.speak(
-            text,
-            TextToSpeech.QUEUE_FLUSH,
-            null,
-            "SMART_EYE_X"
-        )
-    }
-
+    fun speak(text: String, onDone: () -> Unit) {
+    if (!::tts.isInitialized || !isReady) return  // pastiin siap
+    val utteranceId = System.currentTimeMillis().toString()
+    callbackMap[utteranceId] = onDone
+    tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
+}
     fun shutdown() {
         tts.stop()
         tts.shutdown()
