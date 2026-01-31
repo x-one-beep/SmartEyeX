@@ -8,7 +8,9 @@ plugins {
 
 val secretsProps = Properties().apply {
     val f = rootProject.file("app/secrets.properties")
-    if (f.exists()) f.inputStream().use { load(it) }
+    if (f.exists()) {
+        f.inputStream().use { load(it) }
+    }
 }
 
 android {
@@ -28,9 +30,6 @@ android {
             "\"${secretsProps["GROQ_API_KEY"] ?: ""}\""
         )
     }
-
-    // ...resto buildFeatures, compileOptions, buildTypes...
-}
 
     buildFeatures {
         viewBinding = true
@@ -59,6 +58,7 @@ android {
 val cameraxVersion = "1.3.2"
 
 dependencies {
+
     // CameraX
     implementation("androidx.camera:camera-core:$cameraxVersion")
     implementation("androidx.camera:camera-camera2:$cameraxVersion")
