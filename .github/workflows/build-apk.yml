@@ -21,7 +21,7 @@ jobs:
 
       - name: Generate Gradle Wrapper (SAFE)
         run: |
-          gradle wrapper --gradle-version 8.6
+          ./gradlew wrapper --gradle-version 8.6
           chmod +x gradlew
 
       - name: Create secrets file
