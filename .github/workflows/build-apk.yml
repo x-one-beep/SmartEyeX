@@ -9,10 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    - name: Setup secrets
-  run: echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" > app/secrets.properties
-
-steps:
+    steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
@@ -30,12 +27,10 @@ steps:
       - name: Create secrets file
         run: |
           mkdir -p app
-          echo "groq=${{ secrets.GROQ_KEY }}" > app/secrets.properties
-          echo "weather=${{ secrets.WEATHER_KEY }}" >> app/secrets.properties
+          echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" > app/secrets.properties
 
       - name: Build Debug APK
-        run: |
-          ./gradlew assembleDebug
+        run: ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
