@@ -24,11 +24,11 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField(
-            "String",
-            "GROQ_API_KEY",
-            "\"${secretsProps.getProperty("groq") ?: ""}\""
-        )
-    }
+    "String",
+    "GROQ_API_KEY",
+    "\"${System.getenv("GROQ_API_KEY") ?: ""}\""
+    )
+}
 
     buildFeatures {
         viewBinding = true
