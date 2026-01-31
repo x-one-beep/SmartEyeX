@@ -43,87 +43,92 @@ class VoiceService : Service() {
             stopSelf()
         }
     }
-
-    private val listener = object : RecognitionListener {
-        override fun onResults(results: Bundle?) {
-            val text = results
-                ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                ?.firstOrNull()
-                ?.lowercase()
-                ?: return
-
-            // ✅ WA / AI TTS sedang jalan → queue aja
-            if (AppState.isSpeaking || WaReplyManager.isBusy) {
-                WaReplyManager.queueVoice(text)
-                return
-            }
-
-            // ================================
-            // MODE AKTIVASI
-            // ================================
-            if (!isActive && text.contains("bung smart aktif")) {
-                isActive = true
-                AppState.isSpeaking = true
-                voice.speak("Bung Smart aktif") {
+// ===== SATU ASKAI METHOD =====
+private fun askAI(text: String) {
+    if (!::recognizer.isInitialized || !::voice.isInitialized) return
+    AppState.isSpeaking = true
+    try {
+        aiEngine.ask(
+            text,
+            onResult = { answer ->
+                voice.speak(answer) {
                     AppState.isSpeaking = false
-                    restartListening()
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        if (::recognizer.isInitialized) startListening()
+                    }, 300)
                 }
-                return
+            },
+            onError = {
+                voice.speak("AI tidak merespon") {
+                    AppState.isSpeaking = false
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        if (::recognizer.isInitialized) startListening()
+                    }, 300)
+                }
             }
+        )
+    } catch (e: Exception) {
+        AppState.isSpeaking = false
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (::recognizer.isInitialized) startListening()
+        }, 300)
+    }
+}
 
-            // ================================
-            // MODE AI NORMAL
-            // ================================
-            if (text.isNotBlank()) {
-                try {
-                    recognizer.cancel()
-                    askAI(text)
-                } catch (e: Exception) {
-                    restartListening()
-                }
-            } else {
+    // ===== FIXED =====
+
+private val listener = object : RecognitionListener {
+    override fun onResults(results: Bundle?) {
+        val text = results
+            ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+            ?.firstOrNull()
+            ?.lowercase()
+            ?: return
+
+        if (AppState.isSpeaking || WaReplyManager.isBusy) {
+            WaReplyManager.queueVoice(text)
+            return
+        }
+
+        if (!isActive && text.contains("bung smart aktif")) {
+            isActive = true
+            AppState.isSpeaking = true
+            voice.speak("Bung Smart aktif") {
+                AppState.isSpeaking = false
                 restartListening()
             }
+            return
         }
 
-        override fun onError(error: Int) {
-            restartListening()
-        }
-
-        override fun onReadyForSpeech(params: Bundle?) {}
-        override fun onBeginningOfSpeech() {}
-        override fun onRmsChanged(rmsdB: Float) {}
-        override fun onBufferReceived(buffer: ByteArray?) {}
-        override fun onEndOfSpeech() {}
-        override fun onPartialResults(partialResults: Bundle?) {}
-        override fun onEvent(eventType: Int, params: Bundle?) {}
-    }
-
-    private fun askAI(text: String) {
-        if (!::recognizer.isInitialized) return
-        AppState.isSpeaking = true
-        try {
-            aiEngine.ask(
-                text,
-                onResult = { answer ->
-                    voice.speak(answer) {
-                        AppState.isSpeaking = false
-                        restartListening()
-                    }
-                },
-                onError = {
-                    voice.speak("AI tidak merespon") {
-                        AppState.isSpeaking = false
-                        restartListening()
-                    }
-                }
-            )
-        } catch (e: Exception) {
-            AppState.isSpeaking = false
-            restartListening()
+        // MODE AI NORMAL
+        if (text.isNotBlank()) {
+            if (!AppState.isSpeaking && !WaReplyManager.isBusy) {
+                AppState.isSpeaking = true
+                askAI(text) // panggil method di class, bukan di listener
+            } else {
+                WaReplyManager.queueVoice(text)
+            }
         }
     }
 
+    override fun onError(error: Int) {
+        // delay sebelum restart, cek recognizer masih ready
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (::recognizer.isInitialized) startListening()
+        }, 300)
+    }
+
+    override fun onReadyForSpeech(params: Bundle?) {}
+    override fun onBeginningOfSpeech() {}
+    override fun onRmsChanged(rmsdB: Float) {}
+    override fun onBufferReceived(buffer: ByteArray?) {}
+    override fun onEndOfSpeech() {}
+    override fun onPartialResults(partialResults: Bundle?) {}
+    override fun onEvent(eventType: Int, params: Bundle?) {}
+}
+
+
+    
     private fun startListening() {
         if (!::recognizer.isInitialized) return
         try {
