@@ -1,46 +1,23 @@
 package com.smarteyex.core
 
 import android.content.Context
-import android.speech.tts.TextToSpeech
-import android.speech.tts.UtteranceProgressListener
-import java.util.Locale
 
-class VoiceEngine(context: Context) : TextToSpeech.OnInitListener {
+class VoiceEngine(private val context: Context) {
 
-    private lateinit var tts: TextToSpeech
-    private var isReady: Boolean = false
-    private val callbackMap = mutableMapOf<String, () -> Unit>()
+    private val appSpeak = AppSpeak(context)
 
-    init {
-        tts = TextToSpeech(context, this)
-        tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-            override fun onStart(utteranceId: String?) {}
-            override fun onDone(utteranceId: String?) {
-                utteranceId?.let {
-                    callbackMap[it]?.invoke()
-                    callbackMap.remove(it)
-                }
-            }
-            override fun onError(utteranceId: String?) {}
-        })
+    // Fungsi untuk speak response AI atau notifikasi
+    fun speak(text: String) {
+        appSpeak.speakGenZ(text)
     }
 
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            tts.language = Locale("id", "ID")
-            isReady = true
-        }
+    // Fungsi untuk speak notifikasi WA di background
+    fun speakNotification(notification: String) {
+        speak("New WA notification: $notification")
     }
 
-    fun speak(text: String, onDone: () -> Unit) {
-        if (!::tts.isInitialized || !isReady) return
-        val utteranceId = System.currentTimeMillis().toString()
-        callbackMap[utteranceId] = onDone
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
-    }
-
+    // Shutdown untuk cleanup
     fun shutdown() {
-        tts.stop()
-        tts.shutdown()
+        appSpeak.shutdown()
     }
 }
