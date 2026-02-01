@@ -1,59 +1,37 @@
-package com.smarteyex.core.camera
+package com.smarteyex.core
 
 import android.content.Context
-import androidx.camera.core.*
+import androidx.camera.core.Camera
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
-class CameraController(
-    private val context: Context,
-    private val lifecycleOwner: LifecycleOwner,
-    private val previewView: PreviewView
-) {
+class CameraController(private val context: Context, private val lifecycleOwner: LifecycleOwner) {
 
-    private var cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
-    private var cameraProvider: ProcessCameraProvider? = null
+    private var camera: Camera? = null
 
-    fun startCamera() {
+    // Fungsi untuk start kamera dengan HUD overlay
+    fun startCamera(surfaceProvider: androidx.camera.core.Preview.SurfaceProvider) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-
         cameraProviderFuture.addListener({
-            cameraProvider = cameraProviderFuture.get()
-
+            val cameraProvider = cameraProviderFuture.get()
             val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
+                it.setSurfaceProvider(surfaceProvider)
             }
-
-            val imageAnalyzer = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-                .also {
-                    it.setAnalyzer(cameraExecutor, MotionAnalyzer())
-                }
-
-            val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
-
+            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
             try {
-                cameraProvider?.unbindAll()
-                cameraProvider?.bindToLifecycle(
-                    lifecycleOwner,
-                    cameraSelector,
-                    preview,
-                    imageAnalyzer
-                )
+                cameraProvider.unbindAll()
+                camera = cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-
         }, ContextCompat.getMainExecutor(context))
     }
 
+    // Fungsi untuk stop kamera
     fun stopCamera() {
-        cameraProvider?.unbindAll()
-        cameraExecutor.shutdown()
+        camera?.cameraControl?.cancelFocusAndMetering()
     }
 }
