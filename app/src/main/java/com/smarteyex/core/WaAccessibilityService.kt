@@ -1,36 +1,21 @@
-package com.smarteyex.core.wa
+package com.smarteyex.core
 
-import android.accessibilityservice.AccessibilityService
-import android.view.accessibility.AccessibilityEvent
-import android.view.accessibility.AccessibilityNodeInfo
+import android.service.notification.NotificationListenerService
+import android.service.notification.StatusBarNotification
 
-class WaAccessibilityService: AccessibilityService() {
+class WaNotificationListener : NotificationListenerService() {
 
-    companion object{
-        var pendingText=""
-        var sendNow=false
+    override fun onNotificationPosted(sbn: StatusBarNotification?) {
+        if (sbn?.packageName == "com.whatsapp") {
+            val notificationText = sbn.notification.extras.getString("android.text") ?: ""
+            // Baca notifikasi dan trigger TTS
+            VoiceEngine(applicationContext).speakNotification(notificationText)
+            // Trigger auto reply
+            WaReplyManager().autoReply("Auto reply to: $notificationText")
+        }
     }
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-
-        if(!sendNow) return
-
-        rootInActiveWindow?.findAccessibilityNodeInfosByText("Type a message")
-            ?.firstOrNull()?.apply{
-                performAction(AccessibilityNodeInfo.ACTION_SET_TEXT,
-                    android.os.Bundle().apply{
-                        putCharSequence(
-                          AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
-                          pendingText)
-                    })
-            }
-
-        rootInActiveWindow?.findAccessibilityNodeInfosByText("Send")
-            ?.firstOrNull()?.performAction(
-                AccessibilityNodeInfo.ACTION_CLICK)
-
-        sendNow=false
+    override fun onNotificationRemoved(sbn: StatusBarNotification?) {
+        // Handle removal
     }
-
-    override fun onInterrupt() {}
 }
