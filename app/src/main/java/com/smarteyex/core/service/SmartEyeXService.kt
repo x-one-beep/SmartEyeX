@@ -1,66 +1,71 @@
-package com.smarteyex.core
+package com.smarteyex.core.service
 
-import android.app.*
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Service
+import android.content.Context
 import android.content.Intent
-import android.os.IBinder
 import android.os.Build
+import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import com.smarteyex.core.MainActivity
-import com.smarteyex.app.R
+import com.smarteyex.core.*
 
 class SmartEyeXService : Service() {
 
-    companion object {
-        const val CHANNEL_ID = "SmartEyeX_BG_CHANNEL"
-        const val NOTIF_ID = 130809
-    }
+    private lateinit var voiceEngine: VoiceEngine
+    private lateinit var speechCommandProcessor: SpeechCommandProcessor
+    private lateinit var delayManager: DelayManager
 
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannel()
-        startForeground(NOTIF_ID, buildNotification())
+        voiceEngine = VoiceEngine(this)
+        speechCommandProcessor = SpeechCommandProcessor(this)
+        delayManager = DelayManager()
+
+        // Buat notification channel untuk foreground service
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel("SmartEyeX", "SmartEyeX Service", NotificationManager.IMPORTANCE_LOW)
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
+
+        // Start foreground untuk hindari kill
+        val notification: Notification = NotificationCompat.Builder(this, "SmartEyeX")
+            .setContentTitle("SmartEyeX Running")
+            .setContentText("AI and voice services active")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .build()
+        startForeground(1, notification)
+
+        // Start listening perintah suara di background
+        speechCommandProcessor.startListening { command ->
+            // Process command dan trigger AI
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // 🔒 DI SINI NANTI:
-        // - Listener WA aktif
-        // - Voice trigger aktif
-        // - AI background logic
+        // Jalankan service di background tanpa drain baterai berlebihan
         return START_STICKY
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // Matikan semua listener background di sini
+        speechCommandProcessor.stopListening()
+        voiceEngine.shutdown()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun buildNotification(): Notification {
-        val intent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+    companion object {
+        fun startService(context: Context) {
+            val intent = Intent(context, SmartEyeXService::class.java)
+            context.startService(intent)
+        }
 
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("SmartEyeX Aktif")
-            .setContentText("Background mode berjalan")
-            .setSmallIcon(R.mipmap.ic_launcher) // icon kecil
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .build()
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "SmartEyeX Background",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
+        fun stopService(context: Context) {
+            val intent = Intent(context, SmartEyeXService::class.java)
+            context.stopService(intent)
         }
     }
 }
