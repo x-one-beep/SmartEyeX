@@ -1,93 +1,104 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/rootDashboard"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0B0F1A"
-    android:padding="16dp">
+    android:background="@drawable/gradient_hud_background"  <!-- Gradien futuristik -->
+    tools:context=".MainActivity">
 
-    <!-- JAM -->
+    <!-- Glassmorphism Overlay -->
+    <View
+        android:id="@+id/glass_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/glassmorphism_bg"  <!-- Drawable dengan blur dan transparansi -->
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- HUD Clock -->
     <TextView
-        android:id="@+id/txtClock"
+        android:id="@+id/clock_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="00:00:00"
-        android:textColor="#00E5FF"
-        android:textSize="32sp"
-        android:textStyle="bold"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true" />
+        android:textColor="#00FF88"
+        android:textSize="24sp"
+        android:fontFamily="monospace"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_margin="16dp" />
 
-    <!-- PANEL BUTTON -->
-    <GridLayout
-        android:id="@+id/panelButton"
+    <!-- Camera HUD Fragment Container -->
+    <FrameLayout
+        android:id="@+id/camera_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/ai_panel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/clock_text" />
+
+    <!-- AI Chat Panel -->
+    <LinearLayout
+        android:id="@+id/ai_panel"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:columnCount="3"
-        android:rowCount="2"
-        android:alignmentMode="alignMargins"
-        android:useDefaultMargins="true">
+        android:layout_height="200dp"
+        android:background="@drawable/glass_panel"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@id/wa_panel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
-        <ImageButton
-            android:id="@+id/btnCamera"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:background="@android:color/transparent"
-            android:src="@android:drawable/ic_menu_camera"
-            android:tint="#00E5FF" />
+        <TextView
+            android:id="@+id/ai_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="AI Chat Panel"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp" />
 
-        <ImageButton
-            android:id="@+id/btnAI"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:background="@android:color/transparent"
-            android:src="@android:drawable/ic_menu_info_details"
-            android:tint="#00E5FF" />
+        <EditText
+            android:id="@+id/ai_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Chat with AI..."
+            android:textColor="#FFFFFF" />
 
-        <ImageButton
-            android:id="@+id/btnMemory"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:background="@android:color/transparent"
-            android:src="@android:drawable/ic_menu_save"
-            android:tint="#00E5FF" />
+        <Button
+            android:id="@+id/ai_send"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Send" />
+    </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/btnVoice"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:background="@android:color/transparent"
-            android:src="@android:drawable/ic_btn_speak_now"
-            android:tint="#00E5FF" />
+    <!-- WA Notification Panel -->
+    <LinearLayout
+        android:id="@+id/wa_panel"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:background="@drawable/glass_panel"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
-        <ImageButton
-            android:id="@+id/btnWA"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:background="@android:color/transparent"
-            android:src="@android:drawable/ic_dialog_email"
-            android:tint="#00E5FF" />
+        <TextView
+            android:id="@+id/wa_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="WA Notifications"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp" />
 
-        <ImageButton
-            android:id="@+id/btnSetting"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:background="@android:color/transparent"
-            android:src="@android:drawable/ic_menu_preferences"
-            android:tint="#00E5FF" />
+        <TextView
+            android:id="@+id/wa_notifications"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No new notifications"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
 
-    </GridLayout>
-
-    <!-- HUD STATUS -->
-    <TextView
-        android:id="@+id/txtStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="SmartEyeX ACTIVE"
-        android:textColor="#00FF9C"
-        android:textSize="14sp"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true" />
-
-</RelativeLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
