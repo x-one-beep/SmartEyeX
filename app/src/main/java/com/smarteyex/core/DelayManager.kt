@@ -1,17 +1,20 @@
-package com.smarteyex.core.wa
+package com.smarteyex.core
 
 import android.os.Handler
 import android.os.Looper
-import com.smarteyex.core.VoiceService
-import com.smarteyex.core.AppSpeak
 
-object DelayManager {
+class DelayManager {
 
-    fun set(text:String){
-        val minutes = Regex("\\d+").find(text)?.value?.toInt() ?: return
+    private val handler = Handler(Looper.getMainLooper())
 
-        Handler(Looper.getMainLooper()).postDelayed({
-            AppSpeak.speak("Waktu tunggu $minutes menit selesai")
-        }, minutes*60*1000L)
+    // Fungsi untuk debounce aksi (e.g., delay notifikasi)
+    fun debounce(delayMillis: Long, action: () -> Unit) {
+        handler.removeCallbacksAndMessages(null)
+        handler.postDelayed(action, delayMillis)
+    }
+
+    // Fungsi untuk schedule aksi
+    fun schedule(delayMillis: Long, action: () -> Unit) {
+        handler.postDelayed(action, delayMillis)
     }
 }
