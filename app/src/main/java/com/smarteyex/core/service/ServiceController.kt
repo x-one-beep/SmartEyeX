@@ -1,23 +1,20 @@
-package com.smarteyex.core
+package com.smarteyex.core.service
 
 import android.content.Context
-import android.content.Intent
-import android.os.Build
-import com.smarteyex.app.R
 
-object ServiceController {
+class ServiceController(private val context: Context) {
 
-    fun start(context: Context) {
-        val intent = Intent(context, SmartEyeXService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent)
-        } else {
-            context.startService(intent)
-        }
+    // Fungsi untuk manage semua service modular
+    fun startAllServices() {
+        SmartEyeXService.startService(context)
+        // Start lainnya jika perlu
     }
 
-    fun stop(context: Context) {
-        val intent = Intent(context, SmartEyeXService::class.java)
-        context.stopService(intent)
+    fun stopAllServices() {
+        SmartEyeXService.stopService(context)
     }
-}
+
+    // Fungsi untuk check status service
+    fun isServiceRunning(): Boolean {
+        // Implementasi check
+        return true
