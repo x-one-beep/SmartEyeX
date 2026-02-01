@@ -1,21 +1,24 @@
 package com.smarteyex.core
 
-import android.service.notification.NotificationListenerService
-import android.service.notification.StatusBarNotification
+import android.accessibilityservice.AccessibilityService
+import android.view.accessibility.AccessibilityEvent
 
-class WaNotificationListener : NotificationListenerService() {
+class WaAccessibilityService : AccessibilityService() {
 
-    override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        if (sbn?.packageName == "com.whatsapp") {
-            val notificationText = sbn.notification.extras.getString("android.text") ?: ""
-            // Baca notifikasi dan trigger TTS
-            VoiceEngine(applicationContext).speakNotification(notificationText)
-            // Trigger auto reply
-            WaReplyManager().autoReply("Auto reply to: $notificationText")
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        // Akses elemen WA untuk auto reply (e.g., detect chat window)
+        if (event?.packageName == "com.whatsapp") {
+            // Logika untuk extract text atau trigger reply
+            WaReplyManager().autoReply("Auto reply via accessibility")
         }
     }
 
-    override fun onNotificationRemoved(sbn: StatusBarNotification?) {
-        // Handle removal
+    override fun onInterrupt() {
+        // Handle interrupt
+    }
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        // Setup service
     }
 }
