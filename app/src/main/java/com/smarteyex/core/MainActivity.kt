@@ -1,169 +1,54 @@
 package com.smarteyex.core
 
-import android.Manifest
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Build
-import android.widget.ImageButton
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import com.smarteyex.app.R
-import com.smarteyex.core.ai.GroqAiEngine
-import com.smarteyex.core.clock.ClockManager
-import com.smarteyex.core.memory.MemoryManager
-import com.smarteyex.core.navigation.NavigationStateManager
+import androidx.fragment.app.FragmentTransaction
+import com.smarteyex.core.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    // UI
-    private lateinit var txtClock: TextView
-    private lateinit var btnCamera: ImageButton
-    private lateinit var btnAI: ImageButton
-    private lateinit var btnMemory: ImageButton
-    private lateinit var btnVoice: ImageButton
-    private lateinit var btnWA: ImageButton
-    private lateinit var btnSetting: ImageButton
-
-    // Core
+    private lateinit var binding: ActivityMainBinding
     private lateinit var clockManager: ClockManager
-    private lateinit var aiEngine: GroqAiEngine
-    private lateinit var memoryManager: MemoryManager
-    private lateinit var voiceEngine: VoiceEngine
-    private lateinit var navigation: NavigationStateManager
-
-    private val REQ_AUDIO = 1001
+    private lateinit var appState: AppState
+    private lateinit var navigationStateManager: NavigationStateManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        initUI()
-        initCore()
-        initAction()
-        checkPermissionAndStartService()
-    }
+        // Inisialisasi komponen utama
+        clockManager = ClockManager(this, binding.clockText)
+        appState = AppState()
+        navigationStateManager = NavigationStateManager()
 
-    private fun initUI() {
-        txtClock = findViewById(R.id.txtClock)
-        btnCamera = findViewById(R.id.btnCamera)
-        btnAI = findViewById(R.id.btnAI)
-        btnMemory = findViewById(R.id.btnMemory)
-        btnVoice = findViewById(R.id.btnVoice)
-        btnWA = findViewById(R.id.btnWA)
-        btnSetting = findViewById(R.id.btnSetting)
-    }
+        // Load Camera HUD
+        val cameraFragment = CameraFragment()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.camera_container, cameraFragment)
+            .commit()
 
-    private fun initCore() {
-        clockManager = ClockManager(txtClock)
-        aiEngine = GroqAiEngine(this)
-        memoryManager = MemoryManager(this)
-        voiceEngine = VoiceEngine(this)
-        navigation = NavigationStateManager(this)
-        clockManager.start()
-    }
-
-    private fun initAction() {
-
-        btnCamera.setOnClickListener {
-            navigation.openCamera()
-        }
-
-        btnAI.setOnClickListener {
-            sendAiAsk("halo smart eyex")
-        }
-
-        btnMemory.setOnClickListener {
-            navigation.openMemory()
-        }
-
-        btnVoice.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.RECORD_AUDIO
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                restartVoiceService()
-            } else {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.RECORD_AUDIO),
-                    REQ_AUDIO
-                )
+        // Setup AI Chat Panel
+        binding.aiSend.setOnClickListener {
+            val message = binding.aiInput.text.toString()
+            if (message.isNotEmpty()) {
+                GroqAiEngine().chatWithAI(message) { response ->
+                    VoiceEngine().speak(response)  // TTS response
+                }
             }
         }
-if (Build.VERSION.SDK_INT >= 33) {
-    if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
-        != PackageManager.PERMISSION_GRANTED
-    ) {
-        requestPermissions(
-            arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-            2001
-        )
-    }
-}
 
-        btnWA.setOnClickListener {
-            navigation.openWA()
-        }
-
-        btnSetting.setOnClickListener {
-            navigation.openSetting()
-        }
+        // Start background services
+        SmartEyeXService.startService(this)
     }
 
-    // ✅ FIX: fungsi HARUS di luar initAction
-    private fun sendAiAsk(text: String) {
-        val i = Intent(this, VoiceService::class.java)
-        i.action = "AI_ASK"
-        i.putExtra("text", text)
-        startService(i)
+    override fun onResume() {
+        super.onResume()
+        clockManager.startClock()
     }
 
-    private fun checkPermissionAndStartService() {
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.RECORD_AUDIO
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            startVoiceService()
-        } else {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.RECORD_AUDIO),
-                REQ_AUDIO
-            )
-        }
-    }
-
-    private fun startVoiceService() {
-        startService(Intent(this, VoiceService::class.java))
-    }
-
-    private fun restartVoiceService() {
-        stopService(Intent(this, VoiceService::class.java))
-        startVoiceService()
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if (requestCode == REQ_AUDIO &&
-            grantResults.isNotEmpty() &&
-            grantResults[0] == PackageManager.PERMISSION_GRANTED
-        ) {
-            startVoiceService()
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        clockManager.stop()
+    override fun onPause() {
+        super.onPause()
+        clockManager.stopClock()
     }
 }
