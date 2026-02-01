@@ -1,28 +1,39 @@
-package com.smarteyex.core.clock
+package com.smarteyex.core
 
+import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.widget.TextView
 import java.text.SimpleDateFormat
 import java.util.*
 
-class ClockManager(private val textView: TextView) {
+class ClockManager(private val context: Context, private val clockTextView: TextView) {
 
     private val handler = Handler(Looper.getMainLooper())
-    private val format = SimpleDateFormat("HH:mm", Locale.getDefault())
+    private val dateFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+    private var isRunning = false
 
-    private val runnable = object : Runnable {
-        override fun run() {
-            textView.text = format.format(Date())
-            handler.postDelayed(this, 1000)
+    // Fungsi untuk start jam real-time
+    fun startClock() {
+        isRunning = true
+        updateClock()
+    }
+
+    // Fungsi untuk stop jam
+    fun stopClock() {
+        isRunning = false
+        handler.removeCallbacksAndMessages(null)
+    }
+
+    private fun updateClock() {
+        if (isRunning) {
+            clockTextView.text = dateFormat.format(Date())
+            handler.postDelayed({ updateClock() }, 1000)
         }
     }
 
-    fun start() {
-        handler.post(runnable)
-    }
-
-    fun stop() {
-        handler.removeCallbacks(runnable)
+    // Fungsi untuk set alarm (placeholder)
+    fun setAlarm(hour: Int, minute: Int) {
+        // Implementasi alarm sederhana
     }
 }
