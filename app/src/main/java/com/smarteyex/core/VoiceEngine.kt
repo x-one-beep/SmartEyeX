@@ -1,124 +1,67 @@
-package com.smarteyex.core
+package com.smarteyex.core.voice
 
-import android.content.Context
-import android.content.Intent
-import android.os.Bundle
-import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
-import android.speech.tts.TextToSpeech
-import java.util.*
+import com.smarteyex.core.state.AppState
+import kotlinx.coroutines.*
+import kotlin.random.Random
 
-class VoiceEngine(private val context: Context) {
+class VoiceEngine(private val appState: AppState) {
 
-    private var speechRecognizer: SpeechRecognizer? = null
-    private var tts: TextToSpeech? = null
-    private var isListening = false
+    private var listeningJob: Job? = null
+    private var triggerWord: String = "hey smart"
 
-    fun init() {
-        initTTS()
-        initSTT()
-    }
+    private val listeners = mutableListOf<(String) -> Unit>()
 
-    // ================= TTS =================
-    private fun initTTS() {
-        tts = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                tts?.language = Locale("id", "ID")
-                tts?.setSpeechRate(1.0f)
-                tts?.setPitch(1.0f)
+    fun startListening(callback: (speech: String) -> Unit) {
+        listeners.add(callback)
+        if (listeningJob?.isActive == true) return
+
+        listeningJob = CoroutineScope(Dispatchers.Default).launch {
+            while (isActive) {
+                if (!appState.isMicAllowed()) {
+                    delay(500)
+                    continue
+                }
+
+                val speech = simulateUserSpeech() // placeholder, nanti pakai STT asli
+
+                if (speech.isNotEmpty()) {
+                    listeners.forEach { it(speech) }
+                }
+
+                delay(300L)
             }
         }
-    }
-
-    fun speak(text: String) {
-        if (AppState.isSchoolSilent()) return
-        tts?.speak(text, TextToSpeech.QUEUE_ADD, null, "SmartEyeX")
-    }
-
-    fun stopSpeak() {
-        tts?.stop()
-    }
-
-    // ================= STT =================
-    private fun initSTT() {
-        if (!SpeechRecognizer.isRecognitionAvailable(context)) return
-        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
-        speechRecognizer?.setRecognitionListener(listener)
-    }
-
-    fun startListening() {
-        if (isListening || AppState.isGameMicOff()) return
-
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-            )
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-        }
-
-        speechRecognizer?.startListening(intent)
-        isListening = true
     }
 
     fun stopListening() {
-        speechRecognizer?.stopListening()
-        isListening = false
+        listeningJob?.cancel()
+        listeningJob = null
     }
 
-    private val listener = object : RecognitionListener {
-        override fun onReadyForSpeech(params: Bundle?) {}
-        override fun onBeginningOfSpeech() {
-            AppState.markUserSpeaking(true)
-        }
-
-        override fun onRmsChanged(rmsdB: Float) {}
-        override fun onBufferReceived(buffer: ByteArray?) {}
-
-        override fun onEndOfSpeech() {
-            AppState.markUserSpeaking(false)
-        }
-
-        override fun onError(error: Int) {
-            isListening = false
-            // auto-restart ringan
-            AppState.schedule { startListening() }
-        }
-
-        override fun onResults(results: Bundle?) {
-            isListening = false
-            val texts =
-                results?.getStringArrayList(
-                    SpeechRecognizer.RESULTS_RECOGNITION
-                ) ?: return
-
-            val best = texts.firstOrNull() ?: return
-            SpeechCommandProcessor.process(best)
-
-            AppState.schedule { startListening() }
-        }
-
-        override fun onPartialResults(partialResults: Bundle?) {
-            // wake-word ringan tanpa keyword kaku
-            val parts =
-                partialResults?.getStringArrayList(
-                    SpeechRecognizer.RESULTS_RECOGNITION
-                ) ?: return
-
-            val p = parts.firstOrNull()?.lowercase() ?: return
-            if (p.contains("smart") || p.contains("bung")) {
-                AppState.wakeUp()
-            }
-        }
-
-        override fun onEvent(eventType: Int, params: Bundle?) {}
+    fun setTriggerWord(word: String) {
+        triggerWord = word.lowercase()
     }
 
-    fun release() {
-        speechRecognizer?.destroy()
-        tts?.shutdown()
+    fun containsTrigger(speech: String): Boolean {
+        return speech.lowercase().contains(triggerWord)
+    }
+
+    fun adjustSensitivity(
+        emotion: AppState.Emotion,
+        mode: AppState.Mode,
+        batteryLow: Boolean
+    ) {
+        // jika user capek / mode sekolah → kurangi frekuensi listening
+        // jika battery low → kurangi sampling rate
+        // ini untuk hemat daya
+    }
+
+    private fun simulateUserSpeech(): String {
+        // Hanya simulasi; nanti pakai STT
+        val possible = listOf(
+            "halo", "lagi capek nih", "senang banget hari ini",
+            "eh liat ini", "ada notif penting ga"
+        )
+        return if (Random.nextBoolean()) possible.random() else ""
     }
 }
