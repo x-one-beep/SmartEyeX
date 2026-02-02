@@ -3,105 +3,146 @@ package com.smarteyex.core
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
-import android.widget.HorizontalScrollView
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.os.Looper
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import com.smarteyex.core.state.AppState
-import com.smarteyex.core.service.SmartEyeXService
-import com.smarteyex.core.voice.VoiceService
+import androidx.lifecycle.lifecycleScope
 import com.smarteyex.core.chat.ChatActivity
 import com.smarteyex.core.camera.CameraActivity
 import com.smarteyex.core.memory.MemoryActivity
 import com.smarteyex.core.settings.SettingsActivity
+import com.smarteyex.core.state.AppState
+import com.smarteyex.core.service.SmartEyeXService
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var clockView: TextView
-    private lateinit var dashboardContainer: LinearLayout
-    private lateinit var featureScroll: HorizontalScrollView
-    private val handler = Handler()
+    private lateinit var appState: AppState
+    private val uiHandler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Initialize global services
-        VoiceService.init(this)
-        startService(SmartEyeXService::class.java)
+        appState = (application as SmartEyeXApp).appState
 
-        // Bind UI elements
-        clockView = findViewById(R.id.textClock)
-        dashboardContainer = findViewById(R.id.dashboardContainer)
-        featureScroll = findViewById(R.id.featureScroll)
-
+        startCoreService()
+        observeGlobalState()
         initClock()
-        initDashboard()
-        initFeatureButtons()
-        initTouchEffects()
+        initNavigation()
     }
 
-    private fun initClock() {
-        // Update neon clock setiap detik
-        handler.post(object : Runnable {
-            override fun run() {
-                val currentTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
-                clockView.text = currentTime
-                // Neon glow animation bisa di XML / drawable
-                handler.postDelayed(this, 1000)
-            }
-        })
-    }
-
-    private fun initDashboard() {
-        // Tampilkan WA notif, cuaca, status AI
-        // Misal notif WA belum dibaca
-        val notifText = TextView(this).apply {
-            text = "WA: 3 unread, Cuaca: 28°C, AI: Awake"
-            setTextColor(android.graphics.Color.CYAN)
-            textSize = 16f
-            // Bisa ditambah animasi neon / glow
-        }
-        dashboardContainer.addView(notifText)
-    }
-
-    private fun initFeatureButtons() {
-        // Tombol fitur scroll horizontal di bawah dashboard
-        val chatBtn = createFeatureButton("Chat") { startActivity(Intent(this, ChatActivity::class.java)) }
-        val cameraBtn = createFeatureButton("Camera") { startActivity(Intent(this, CameraActivity::class.java)) }
-        val memoryBtn = createFeatureButton("Memory") { startActivity(Intent(this, MemoryActivity::class.java)) }
-        val settingsBtn = createFeatureButton("Settings") { startActivity(Intent(this, SettingsActivity::class.java)) }
-
-        val buttonContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            addView(chatBtn)
-            addView(cameraBtn)
-            addView(memoryBtn)
-            addView(settingsBtn)
-        }
-
-        featureScroll.addView(buttonContainer)
-    }
-
-    private fun createFeatureButton(label: String, onClick: () -> Unit): TextView {
-        return TextView(this).apply {
-            text = label
-            textSize = 14f
-            setPadding(40, 20, 40, 20)
-            setTextColor(android.graphics.Color.WHITE)
-            background = resources.getDrawable(R.drawable.neon_button_bg, null)
-            setOnClickListener { onClick() }
-            // Tambah animasi glow / transparan sesuai style
-        }
-    }
-
-    private fun initTouchEffects() {
-        // Bisa inject NeonTouchLayer di root layout untuk ripple/particle per fitur
-        // Efek sentuh aktif, fade cepat, hemat daya
-    }
-
-    private fun startService(service: Class<*>) {
-        val intent = Intent(this, service)
+    /**
+     * ===============================
+     * CORE SERVICE
+     * ===============================
+     * AI hidup walau user cuma di beranda
+     */
+    private fun startCoreService() {
+        val intent = Intent(this, SmartEyeXService::class.java)
         startService(intent)
+    }
+
+    /**
+     * ===============================
+     * GLOBAL STATE OBSERVER
+     * ===============================
+     * MainActivity TIDAK mikir,
+     * dia cuma mantau & tampilkan status AI
+     */
+    private fun observeGlobalState() {
+        lifecycleScope.launch {
+            appState.stateFlow.collect { state ->
+
+                // 1️⃣ Status AI (awake / rest)
+                updateAiPresence(state.isAwake)
+
+                // 2️⃣ Mode (normal / school / game)
+                updateModeIndicator(state.currentMode)
+
+                // 3️⃣ Emosi dominan (ringkas)
+                updateEmotionIndicator(state.emotion)
+
+                // 4️⃣ Mic status (privacy aware)
+                updateMicIndicator(state.micMode)
+            }
+        }
+    }
+
+    /**
+     * ===============================
+     * JAM = DENYUT HIDUP AI
+     * ===============================
+     * Dipakai AI untuk:
+     * - gaya bicara
+     * - timing respon
+     */
+    private fun initClock() {
+        val clockRunnable = object : Runnable {
+            override fun run() {
+                val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+                findViewById<android.widget.TextView>(R.id.tvTime).text = time
+                uiHandler.postDelayed(this, 1000)
+            }
+        }
+        uiHandler.post(clockRunnable)
+    }
+
+    /**
+     * ===============================
+     * NAVIGASI = INDERA AI
+     * ===============================
+     */
+    private fun initNavigation() {
+
+        findViewById<View>(R.id.btnChat).setOnClickListener {
+            startActivity(Intent(this, ChatActivity::class.java))
+        }
+
+        findViewById<View>(R.id.btnCamera).setOnClickListener {
+            startActivity(Intent(this, CameraActivity::class.java))
+        }
+
+        findViewById<View>(R.id.btnMemory).setOnClickListener {
+            startActivity(Intent(this, MemoryActivity::class.java))
+        }
+
+        findViewById<View>(R.id.btnSettings).setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+    }
+
+    /**
+     * ===============================
+     * UI UPDATE SECTION
+     * ===============================
+     * Semua transparan → trust user
+     */
+
+    private fun updateAiPresence(isAwake: Boolean) {
+        // contoh: icon glow hidup / redup
+        // AI hadir tapi ga selalu ngomong
+    }
+
+    private fun updateModeIndicator(mode: AppState.Mode) {
+        // Normal / School / Game
+        // efek visual beda, perilaku AI beda
+    }
+
+    private fun updateEmotionIndicator(emotion: AppState.Emotion) {
+        // ringkas: ikon / warna
+        // detail emosi dipakai AI, bukan UI
+    }
+
+    private fun updateMicIndicator(micMode: AppState.MicMode) {
+        // Always listening / Trigger / Off
+        // PRIVASI JELAS
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        uiHandler.removeCallbacksAndMessages(null)
     }
 }
