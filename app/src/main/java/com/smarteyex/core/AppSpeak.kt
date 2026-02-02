@@ -1,41 +1,103 @@
 package com.smarteyex.core
 
 import android.content.Context
+import android.speech.tts.TextToSpeech
+import java.util.Locale
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
 
-object AppSpeak {
+object AppSpeak : TextToSpeech.OnInitListener {
 
-    private var engine: VoiceEngine? = null
+    private var tts: TextToSpeech? = null
+    private val ready = AtomicBoolean(false)
+    private val speaking = AtomicBoolean(false)
+    private val queue = ConcurrentLinkedQueue<String>()
 
-    fun init(context: Context, onResult: (String) -> Unit) {
-        if (engine == null) {
-            engine = VoiceEngine(context, onResult)
+    fun init(context: Context) {
+        if (tts != null) return
+        tts = TextToSpeech(context.applicationContext, this)
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            tts?.language = Locale("id", "ID")
+            ready.set(true)
+            flushQueue()
         }
     }
 
+    /**
+     * ENTRY UTAMA – semua suara lewat sini
+     */
     fun say(text: String) {
-        if (NavigationStateManager.isBusy()) return
-        NavigationStateManager.setState(
-            NavigationStateManager.State.SPEAKING
+        if (!ready.get()) {
+            queue.add(text)
+            return
+        }
+        queue.add(text)
+        flushQueue()
+    }
+
+    /**
+     * Jangan motong omongan
+     */
+    private fun flushQueue() {
+        if (speaking.get()) return
+        val next = queue.poll() ?: return
+        speaking.set(true)
+
+        applyEmotion()
+
+        tts?.speak(
+            next,
+            TextToSpeech.QUEUE_FLUSH,
+            null,
+            "SMARTEYEX_${System.currentTimeMillis()}"
         )
-        engine?.speak(text)
-        NavigationStateManager.setState(
-            NavigationStateManager.State.IDLE
+
+        tts?.setOnUtteranceProgressListener(
+            SimpleUtteranceListener(
+                onDone = {
+                    speaking.set(false)
+                    flushQueue()
+                },
+                onError = {
+                    speaking.set(false)
+                    flushQueue()
+                }
+            )
         )
     }
 
-    fun listen() {
-        if (AppState.userMode == AppState.UserMode.GAME &&
-            AppState.aiMode != AppState.AiMode.ACTIVE
-        ) return
-
-        NavigationStateManager.setState(
-            NavigationStateManager.State.LISTENING
-        )
-        engine?.listen()
+    /**
+     * EMOSI NGARUH KE INTONASI
+     */
+    private fun applyEmotion() {
+        when (AppState.emotion) {
+            AppState.Emotion.SENENG -> {
+                tts?.setPitch(1.15f)
+                tts?.setSpeechRate(1.05f)
+            }
+            AppState.Emotion.SEDIH -> {
+                tts?.setPitch(0.9f)
+                tts?.setSpeechRate(0.9f)
+            }
+            AppState.Emotion.KESEL -> {
+                tts?.setPitch(1.2f)
+                tts?.setSpeechRate(1.1f)
+            }
+            else -> {
+                tts?.setPitch(1.0f)
+                tts?.setSpeechRate(1.0f)
+            }
+        }
     }
 
-    fun destroy() {
-        engine?.shutdown()
-        engine = null
+    fun shutdown() {
+        tts?.shutdown()
+        tts = null
+        ready.set(false)
+        speaking.set(false)
+        queue.clear()
     }
 }
