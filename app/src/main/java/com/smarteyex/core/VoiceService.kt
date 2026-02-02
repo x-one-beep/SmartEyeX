@@ -1,24 +1,30 @@
 package com.smarteyex.core
 
-import android.accessibilityservice.AccessibilityService
-import android.view.accessibility.AccessibilityEvent
+import android.content.Context
+import kotlinx.coroutines.*
 
-class WaAccessibilityService : AccessibilityService() {
+class VoiceService(private val context: Context) {
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // Akses elemen WA untuk auto reply (e.g., detect chat window)
-        if (event?.packageName == "com.whatsapp") {
-            // Logika untuk extract text atau trigger reply
-            WaReplyManager().autoReply("Auto reply via accessibility")
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+    fun start() {
+        AppSpeak.init(context) { text ->
+            AppState.updateActivity()
+            SpeechCommandProcessor.process(text)
+        }
+
+        scope.launch {
+            while (isActive) {
+                if (!AppState.isSpeaking && !AppState.isListening) {
+                    AppSpeak.listen()
+                }
+                delay(1500)
+            }
         }
     }
 
-    override fun onInterrupt() {
-        // Handle interrupt
-    }
-
-    override fun onServiceConnected() {
-        super.onServiceConnected()
-        // Setup service
+    fun stop() {
+        scope.cancel()
+        AppSpeak.destroy()
     }
 }
