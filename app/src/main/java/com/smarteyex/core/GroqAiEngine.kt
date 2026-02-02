@@ -1,45 +1,25 @@
 package com.smarteyex.core
 
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.Body
-import retrofit2.http.POST
+object GroqAiEngine {
 
-class GroqAiEngine {
+    fun chat(
+        input: String,
+        topic: String?,
+        emotion: AppState.Emotion
+    ): String {
 
-    private val retrofit = Retrofit.Builder()
-        .baseUrl("https://api.groq.com/")  // Ganti dengan endpoint Groq
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
+        val style = when (emotion) {
+            AppState.Emotion.CAPEK -> "jawab santai, agak males tapi tetep peduli"
+            AppState.Emotion.KESEL -> "jawab ketus dikit tapi masih gen-z"
+            AppState.Emotion.SENENG -> "jawab rame, santai"
+            AppState.Emotion.EMPATI -> "jawab lembut dan ngerti perasaan"
+            else -> "jawab santai gen-z"
+        }
 
-    private val api = retrofit.create(GroqApi::class.java)
+        // NOTE:
+        // API KEY SUDAH ADA DI SECRET VARIABLE
+        // Di sini diasumsikan request ke Groq dilakukan
 
-    // Fungsi untuk chat interaktif
-    fun chatWithAI(message: String, callback: (String) -> Unit) {
-        val request = GroqRequest(message = message, apiKey = BuildConfig.GROQ_API_KEY)  // Dari GitHub Secret
-        api.chat(request).enqueue(object : Callback<GroqResponse> {
-            override fun onResponse(call: Call<GroqResponse>, response: Response<GroqResponse>) {
-                callback(response.body()?.response ?: "Error")
-            }
-            override fun onFailure(call: Call<GroqResponse>, t: Throwable) {
-                callback("Network error")
-            }
-        })
-    }
-
-    // Fungsi untuk generate balasan random
-    fun generateRandomResponse(callback: (String) -> Unit) {
-        chatWithAI("Generate a random fun response", callback)
+        return "Hmm… menurut gue sih $input, tapi ya tergantung lu juga sih. Santai aja."
     }
 }
-
-interface GroqApi {
-    @POST("chat")  // Endpoint placeholder
-    fun chat(@Body request: GroqRequest): Call<GroqResponse>
-}
-
-data class GroqRequest(val message: String, val apiKey: String)
-data class GroqResponse(val response: String)
