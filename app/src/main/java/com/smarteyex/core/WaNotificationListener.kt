@@ -2,20 +2,29 @@ package com.smarteyex.core
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import kotlinx.coroutines.*
+import java.util.concurrent.ConcurrentHashMap
 
 class WaNotificationListener : NotificationListenerService() {
 
-    override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        if (sbn?.packageName == "com.whatsapp") {
-            val notificationText = sbn.notification.extras.getString("android.text") ?: ""
-            // Baca notifikasi dan trigger TTS
-            VoiceEngine(applicationContext).speakNotification(notificationText)
-            // Trigger auto reply
-            WaReplyManager().autoReply("Auto reply to: $notificationText")
-        }
-    }
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val bubbleMap = ConcurrentHashMap<String, MutableList<String>>()
 
-    override fun onNotificationRemoved(sbn: StatusBarNotification?) {
-        // Handle removal
+    override fun onNotificationPosted(sbn: StatusBarNotification) {
+        if (!sbn.packageName.contains("whatsapp", true)) return
+
+        val extras = sbn.notification.extras
+        val sender = extras.getString("android.title") ?: return
+        val text = extras.getCharSequence("android.text")?.toString() ?: return
+
+        bubbleMap.getOrPut(sender) { mutableListOf() }.add(text)
+
+        scope.launch {
+            DelayManager.bubbleMergeDelay()
+            val messages = bubbleMap.remove(sender) ?: return@launch
+            val merged = messages.joinToString(", ")
+
+            ConversationQueue.enqueue(sender, merged)
+        }
     }
 }
