@@ -1,28 +1,55 @@
-package com.smarteyex.core
+package com.smarteyex.core.voice
 
-import android.app.Service
-import android.content.Intent
-import android.os.IBinder
+import android.content.Context
+import android.speech.tts.TextToSpeech
+import java.util.*
 
-class VoiceService : Service() {
+object VoiceService : TextToSpeech.OnInitListener {
 
-    private lateinit var engine: VoiceEngine
+    private lateinit var tts: TextToSpeech
+    private var initialized = false
+    private var context: Context? = null
 
-    override fun onCreate() {
-        super.onCreate()
-        engine = VoiceEngine(this)
-        engine.init()
-        engine.startListening()
+    fun init(context: Context) {
+        this.context = context
+        tts = TextToSpeech(context, this)
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            tts.language = Locale.US
+            initialized = true
+        }
     }
 
-    override fun onDestroy() {
-        engine.release()
-        super.onDestroy()
+    fun speak(text: String) {
+        if (!initialized) return
+        tts.speak(text, TextToSpeech.QUEUE_ADD, null, "SmartEyeX")
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
+    fun setSchoolMode(enabled: Boolean) {
+        // adjust volume / speech rate
+        tts.setSpeechRate(if (enabled) 0.7f else 1.0f)
+    }
+
+    fun setGameMode(enabled: Boolean) {
+        tts.setSpeechRate(if (enabled) 1.2f else 1.0f)
+    }
+
+    fun setAlwaysListening(enabled: Boolean) {
+        WakeWordEngine.setListening(enabled)
+    }
+
+    fun setEmotionLevel(level: Int) {
+        // adjust pitch / tone based on AI emotion
+        tts.setPitch(1.0f + (level / 10f))
+    }
+
+    fun setRestingMode(resting: Boolean) {
+        if (resting) {
+            tts.setSpeechRate(0.5f)
+        } else {
+            tts.setSpeechRate(1.0f)
+        }
+    }
 }
