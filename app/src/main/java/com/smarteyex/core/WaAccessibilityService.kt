@@ -6,41 +6,26 @@ import android.view.accessibility.AccessibilityNodeInfo
 
 class WaAccessibilityService : AccessibilityService() {
 
-    companion object {
-        private var instance: WaAccessibilityService? = null
-
-        fun sendMessage(text: String) {
-            instance?.performSend(text)
-        }
-    }
-
-    override fun onServiceConnected() {
-        instance = this
-    }
-
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
 
     override fun onInterrupt() {}
 
-    private fun performSend(text: String) {
+    fun sendMessage(message: String) {
         val root = rootInActiveWindow ?: return
-
         val input =
             root.findAccessibilityNodeInfosByViewId(
                 "com.whatsapp:id/entry"
-            ).firstOrNull()
+            ).firstOrNull() ?: return
 
-        input?.apply {
-            performAction(
-                AccessibilityNodeInfo.ACTION_SET_TEXT,
-                android.os.Bundle().apply {
-                    putCharSequence(
-                        AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
-                        text
-                    )
-                }
-            )
-        }
+        input.performAction(
+            AccessibilityNodeInfo.ACTION_SET_TEXT,
+            android.os.Bundle().apply {
+                putCharSequence(
+                    AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                    message
+                )
+            }
+        )
 
         val sendBtn =
             root.findAccessibilityNodeInfosByViewId(
