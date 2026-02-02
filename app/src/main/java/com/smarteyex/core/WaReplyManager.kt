@@ -1,19 +1,14 @@
 package com.smarteyex.core
 
-class WaReplyManager {
+object WaReplyManager {
 
-    // Fungsi untuk manage auto reply WA
-    fun autoReply(message: String) {
-        // Panggil AI untuk generate reply berdasarkan konteks
-        GroqAiEngine().chatWithAI("Generate reply for WA: $message") { aiReply ->
-            WaSender().sendMessage(aiReply)
-        }
-    }
-
-    // Fungsi untuk reply random
-    fun randomReply() {
-        GroqAiEngine().generateRandomResponse { response ->
-            WaSender().sendMessage(response)
-        }
+    fun sendDirect(text: String) {
+        NavigationStateManager.setState(
+            NavigationStateManager.State.PROCESSING_REPLY
+        )
+        WaSender.send(text)
+        NavigationStateManager.setState(
+            NavigationStateManager.State.IDLE
+        )
     }
 }
