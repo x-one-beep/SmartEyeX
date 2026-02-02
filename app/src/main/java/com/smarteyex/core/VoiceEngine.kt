@@ -6,120 +6,119 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
 import java.util.*
-import java.util.concurrent.atomic.AtomicBoolean
 
-class VoiceEngine(
-    private val context: Context,
-    private val onResult: (String) -> Unit
-) {
+class VoiceEngine(private val context: Context) {
 
-    private var recognizer: SpeechRecognizer? = null
-    private val listening = AtomicBoolean(false)
+    private var speechRecognizer: SpeechRecognizer? = null
+    private var tts: TextToSpeech? = null
+    private var isListening = false
 
-    private val wakeWords = listOf(
-        "bung smart",
-        "woi smart",
-        "smart",
-        "eh smart",
-        "oi smart"
-    )
-
-    fun start() {
-        if (listening.get()) return
-
-        recognizer = SpeechRecognizer.createSpeechRecognizer(context)
-        recognizer?.setRecognitionListener(listener)
-        listening.set(true)
-        listen()
+    fun init() {
+        initTTS()
+        initSTT()
     }
 
-    fun stop() {
-        listening.set(false)
-        recognizer?.stopListening()
-        recognizer?.destroy()
-        recognizer = null
+    // ================= TTS =================
+    private fun initTTS() {
+        tts = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                tts?.language = Locale("id", "ID")
+                tts?.setSpeechRate(1.0f)
+                tts?.setPitch(1.0f)
+            }
+        }
     }
 
-    private fun listen() {
-        if (!listening.get()) return
+    fun speak(text: String) {
+        if (AppState.isSchoolSilent()) return
+        tts?.speak(text, TextToSpeech.QUEUE_ADD, null, "SmartEyeX")
+    }
+
+    fun stopSpeak() {
+        tts?.stop()
+    }
+
+    // ================= STT =================
+    private fun initSTT() {
+        if (!SpeechRecognizer.isRecognitionAvailable(context)) return
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
+        speechRecognizer?.setRecognitionListener(listener)
+    }
+
+    fun startListening() {
+        if (isListening || AppState.isGameMicOff()) return
 
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(
                 RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
             )
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
         }
 
-        recognizer?.startListening(intent)
+        speechRecognizer?.startListening(intent)
+        isListening = true
+    }
+
+    fun stopListening() {
+        speechRecognizer?.stopListening()
+        isListening = false
     }
 
     private val listener = object : RecognitionListener {
-
-        override fun onResults(results: Bundle) {
-            val texts =
-                results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    ?: emptyList()
-
-            handleTexts(texts)
-            restart()
+        override fun onReadyForSpeech(params: Bundle?) {}
+        override fun onBeginningOfSpeech() {
+            AppState.markUserSpeaking(true)
         }
 
-        override fun onPartialResults(partialResults: Bundle) {
-            val texts =
-                partialResults.getStringArrayList(
-                    SpeechRecognizer.RESULTS_RECOGNITION
-                ) ?: return
+        override fun onRmsChanged(rmsdB: Float) {}
+        override fun onBufferReceived(buffer: ByteArray?) {}
 
-            handleTexts(texts)
-        }
-
-        private fun handleTexts(texts: List<String>) {
-            for (text in texts) {
-                val lower = text.lowercase()
-
-                // MODE GAME: cuma aktif kalo ada wake-word
-                if (AppState.userMode == AppState.UserMode.GAME) {
-                    if (wakeWords.any { lower.contains(it) }) {
-                        AppState.aiMode = AppState.AiMode.ACTIVE
-                        AppSpeak.say("Iya, apaan?")
-                    }
-                    continue
-                }
-
-                // MODE PASSIVE-AWARE
-                if (AppState.aiMode == AppState.AiMode.PASSIVE_AWARE) {
-                    if (wakeWords.any { lower.contains(it) }) {
-                        AppState.aiMode = AppState.AiMode.ACTIVE
-                        AppSpeak.say("Hmm?")
-                        continue
-                    }
-                }
-
-                if (AppState.aiMode == AppState.AiMode.ACTIVE) {
-                    onResult(text)
-                    break
-                }
-            }
-        }
-
-        private fun restart() {
-            if (listening.get()) {
-                listen()
-            }
+        override fun onEndOfSpeech() {
+            AppState.markUserSpeaking(false)
         }
 
         override fun onError(error: Int) {
-            restart()
+            isListening = false
+            // auto-restart ringan
+            AppState.schedule { startListening() }
         }
 
-        override fun onReadyForSpeech(params: Bundle?) {}
-        override fun onBeginningOfSpeech() {}
-        override fun onEndOfSpeech() {}
-        override fun onRmsChanged(rmsdB: Float) {}
-        override fun onBufferReceived(buffer: ByteArray?) {}
+        override fun onResults(results: Bundle?) {
+            isListening = false
+            val texts =
+                results?.getStringArrayList(
+                    SpeechRecognizer.RESULTS_RECOGNITION
+                ) ?: return
+
+            val best = texts.firstOrNull() ?: return
+            SpeechCommandProcessor.process(best)
+
+            AppState.schedule { startListening() }
+        }
+
+        override fun onPartialResults(partialResults: Bundle?) {
+            // wake-word ringan tanpa keyword kaku
+            val parts =
+                partialResults?.getStringArrayList(
+                    SpeechRecognizer.RESULTS_RECOGNITION
+                ) ?: return
+
+            val p = parts.firstOrNull()?.lowercase() ?: return
+            if (p.contains("smart") || p.contains("bung")) {
+                AppState.wakeUp()
+            }
+        }
+
         override fun onEvent(eventType: Int, params: Bundle?) {}
+    }
+
+    fun release() {
+        speechRecognizer?.destroy()
+        tts?.shutdown()
     }
 }
