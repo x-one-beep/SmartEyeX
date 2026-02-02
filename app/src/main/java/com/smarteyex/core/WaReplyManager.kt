@@ -2,17 +2,20 @@ package com.smarteyex.core
 
 object WaReplyManager {
 
+    private var currentSender: String? = null
+
+    fun prepareReply(sender: String) {
+        currentSender = sender
+        SpeechCommandProcessor.setWaitingWaReply(true)
+    }
+
     fun sendDirect(text: String) {
-        NavigationStateManager.setState(
-            NavigationStateManager.State.PROCESSING_REPLY
-        )
+        val sender = currentSender ?: return
 
-        WaSender.send(text)
+        AppState.enqueueTask {
+            WaSender.send(text)
+        }
 
-        NavigationStateManager.setState(
-            NavigationStateManager.State.IDLE
-        )
-
-        ConversationQueue.enqueue("", "") // trigger lanjut queue
+        currentSender = null
     }
 }
