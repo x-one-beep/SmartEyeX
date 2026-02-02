@@ -6,9 +6,13 @@ object WaReplyManager {
         NavigationStateManager.setState(
             NavigationStateManager.State.PROCESSING_REPLY
         )
+
         WaSender.send(text)
+
         NavigationStateManager.setState(
             NavigationStateManager.State.IDLE
         )
+
+        ConversationQueue.enqueue("", "") // trigger lanjut queue
     }
 }
