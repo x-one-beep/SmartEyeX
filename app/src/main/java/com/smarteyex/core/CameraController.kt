@@ -1,37 +1,47 @@
 package com.smarteyex.core
 
 import android.content.Context
-import androidx.camera.core.Camera
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.Preview
+import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import java.util.concurrent.Executors
 
-class CameraController(private val context: Context, private val lifecycleOwner: LifecycleOwner) {
+class CameraController(
+    private val context: Context,
+    private val lifecycleOwner: LifecycleOwner
+) {
 
-    private var camera: Camera? = null
+    private val executor = Executors.newSingleThreadExecutor()
+    private var analyzer: MotionAnalyzer? = null
 
-    // Fungsi untuk start kamera dengan HUD overlay
-    fun startCamera(surfaceProvider: androidx.camera.core.Preview.SurfaceProvider) {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-        cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(surfaceProvider)
-            }
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-            try {
-                cameraProvider.unbindAll()
-                camera = cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+    fun start(onFrame: (ImageProxy) -> Unit) {
+        val providerFuture = ProcessCameraProvider.getInstance(context)
+        providerFuture.addListener({
+            val cameraProvider = providerFuture.get()
+
+            val preview = Preview.Builder().build()
+
+            val analysis = ImageAnalysis.Builder()
+                .setBackpressureStrategy(
+                    ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST
+                )
+                .build()
+
+            analyzer = MotionAnalyzer(onFrame)
+            analysis.setAnalyzer(executor, analyzer!!)
+
+            cameraProvider.unbindAll()
+            cameraProvider.bindToLifecycle(
+                lifecycleOwner,
+                CameraSelector.DEFAULT_BACK_CAMERA,
+                preview,
+                analysis
+            )
         }, ContextCompat.getMainExecutor(context))
     }
 
-    // Fungsi untuk stop kamera
-    fun stopCamera() {
-        camera?.cameraControl?.cancelFocusAndMetering()
+    fun stop() {
+        analyzer?.stop()
     }
 }
