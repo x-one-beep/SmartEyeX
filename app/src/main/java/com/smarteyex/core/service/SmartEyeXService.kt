@@ -1,45 +1,29 @@
 package com.smarteyex.core.service
 
-import android.app.*
+import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import com.smarteyex.core.ClockManager
+import com.smarteyex.core.state.AppState
+import com.smarteyex.core.voice.VoiceService
 
 class SmartEyeXService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startForeground(1, buildNotification())
-        ClockManager.start()
+        VoiceService.init(applicationContext)
+        startBackgroundListeners()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        ServiceController.startAll(this)
-        return START_STICKY
-    }
-
-    override fun onDestroy() {
-        ClockManager.stop()
-        ServiceController.stopAll()
-        super.onDestroy()
+    private fun startBackgroundListeners() {
+        // Simulasi WA listener & mic listener
+        Thread {
+            while (!AppState.isAIResting) {
+                // cek notif WA
+                // cek voice command
+                Thread.sleep(1000)
+            }
+        }.start()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
-
-    private fun buildNotification(): Notification {
-        val channelId = "smarteyex_core"
-        val channel = NotificationChannel(
-            channelId,
-            "SmartEyeX AI",
-            NotificationManager.IMPORTANCE_LOW
-        )
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(channel)
-
-        return Notification.Builder(this, channelId)
-            .setContentTitle("SmartEyeX aktif")
-            .setContentText("AI lagi hidup di background")
-            .setSmallIcon(android.R.drawable.ic_btn_speak_now)
-            .build()
-    }
 }
