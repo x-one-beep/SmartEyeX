@@ -1,55 +1,62 @@
 package com.smarteyex.core.voice
 
 import android.content.Context
-import android.speech.tts.TextToSpeech
-import java.util.*
+import android.media.AudioAttributes
+import android.media.AudioFormat
+import android.media.AudioTrack
+import com.smarteyex.core.state.AppState
+import kotlinx.coroutines.*
+import kotlin.random.Random
 
-object VoiceService : TextToSpeech.OnInitListener {
+data class VoiceResponse(
+    val text: String,
+    val emotion: AppState.Emotion,
+    val shouldSpeak: Boolean = true
+)
 
-    private lateinit var tts: TextToSpeech
-    private var initialized = false
-    private var context: Context? = null
+class VoiceService(private val context: Context, private val appState: AppState) {
 
-    fun init(context: Context) {
-        this.context = context
-        tts = TextToSpeech(context, this)
-    }
+    private var speakJob: Job? = null
 
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            tts.language = Locale.US
-            initialized = true
+    /**
+     * Speak text dengan emosi dan tempo manusia
+     */
+    fun speak(text: String, emotion: AppState.Emotion) {
+        if (!appState.isMicAllowed()) return
+        if (appState.isConversationCrowded) return
+
+        speakJob?.cancel()
+        speakJob = CoroutineScope(Dispatchers.IO).launch {
+            val finalText = applyEmotionStyle(text, emotion)
+            simulateSpeechOutput(finalText)
         }
     }
 
-    fun speak(text: String) {
-        if (!initialized) return
-        tts.speak(text, TextToSpeech.QUEUE_ADD, null, "SmartEyeX")
-    }
-
-    fun setSchoolMode(enabled: Boolean) {
-        // adjust volume / speech rate
-        tts.setSpeechRate(if (enabled) 0.7f else 1.0f)
-    }
-
-    fun setGameMode(enabled: Boolean) {
-        tts.setSpeechRate(if (enabled) 1.2f else 1.0f)
-    }
-
-    fun setAlwaysListening(enabled: Boolean) {
-        WakeWordEngine.setListening(enabled)
-    }
-
-    fun setEmotionLevel(level: Int) {
-        // adjust pitch / tone based on AI emotion
-        tts.setPitch(1.0f + (level / 10f))
-    }
-
-    fun setRestingMode(resting: Boolean) {
-        if (resting) {
-            tts.setSpeechRate(0.5f)
-        } else {
-            tts.setSpeechRate(1.0f)
+    /**
+     * Tambahkan style / intonasi sesuai emosi
+     */
+    private fun applyEmotionStyle(text: String, emotion: AppState.Emotion): String {
+        return when (emotion) {
+            AppState.Emotion.SENANG -> "😊 $text"
+            AppState.Emotion.CAPEK -> "😴 $text"
+            AppState.Emotion.SEDIH -> "😔 $text"
+            AppState.Emotion.MARAH -> "😡 $text"
+            else -> text
         }
+    }
+
+    /**
+     * Placeholder simulasi TTS (nanti bisa ganti neural TTS)
+     */
+    private suspend fun simulateSpeechOutput(text: String) {
+        val words = text.split(" ")
+        for (word in words) {
+            println("[VoiceService] $word") // debug console, nanti ganti TTS engine
+            delay(150L + Random.nextLong(0, 100)) // variasi tempo manusia
+        }
+    }
+
+    fun stop() {
+        speakJob?.cancel()
     }
 }
