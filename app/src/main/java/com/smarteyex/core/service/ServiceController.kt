@@ -1,20 +1,21 @@
 package com.smarteyex.core.service
 
 import android.content.Context
+import com.smarteyex.core.VoiceService
 
-class ServiceController(private val context: Context) {
+object ServiceController {
 
-    // Fungsi untuk manage semua service modular
-    fun startAllServices() {
-        SmartEyeXService.startService(context)
-        // Start lainnya jika perlu
+    private var voiceService: VoiceService? = null
+
+    fun startAll(context: Context) {
+        if (voiceService == null) {
+            voiceService = VoiceService(context)
+            voiceService?.start()
+        }
     }
 
-    fun stopAllServices() {
-        SmartEyeXService.stopService(context)
+    fun stopAll() {
+        voiceService?.stop()
+        voiceService = null
     }
-
-    // Fungsi untuk check status service
-    fun isServiceRunning(): Boolean {
-        // Implementasi check
-        return true
+}
