@@ -1,32 +1,25 @@
-package com.smarteyex.core.navigation
+package com.smarteyex.core
 
-import android.content.Context
-import android.content.Intent
-import com.smarteyex.core.MainActivity
-import com.smarteyex.core.camera.CameraFragment
+object NavigationStateManager {
 
-class NavigationStateManager(private val context: Context) {
-
-    fun openCamera() {
-        val intent = Intent(context, MainActivity::class.java)
-        intent.putExtra("open", "camera")
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        context.startActivity(intent)
+    enum class State {
+        IDLE,
+        LISTENING,
+        SPEAKING,
+        WAITING_USER_RESPONSE,
+        PROCESSING_REPLY
     }
 
-    fun openAI() {
-        // Panel AI nanti bisa fragment / activity sendiri
+    @Volatile
+    private var currentState: State = State.IDLE
+
+    fun setState(state: State) {
+        currentState = state
     }
 
-    fun openMemory() {
-        // Halaman memory viewer
-    }
+    fun getState(): State = currentState
 
-    fun openWA() {
-        // Status WA listener
-    }
-
-    fun openSetting() {
-        // Setting SmartEyeX
+    fun isBusy(): Boolean {
+        return currentState == State.SPEAKING || currentState == State.LISTENING
     }
 }
