@@ -1,39 +1,37 @@
 package com.smarteyex.core
 
+import java.time.LocalDateTime
+
 object SpeechCommandProcessor {
 
     private var activeTopic: String? = null
 
     fun process(input: String) {
 
-        // MODE SWITCH (VOICE)
         when {
             input.contains("mode sekolah") -> {
-                AppState.userMode = AppState.UserMode.SEKOLAH
-                AppSpeak.say("Oke, gue diem. Fokus sekolah dulu.")
-                return
+                ModeManager.setSchoolMode(); return
             }
-
             input.contains("mode game") -> {
-                AppState.userMode = AppState.UserMode.GAME
-                AppSpeak.say("Gas. Gue nongkrong di background aja.")
-                return
+                ModeManager.setGameMode(); return
             }
-
-            input.contains("bung smart aktif") -> {
-                AppState.aiMode = AppState.AiMode.ACTIVE
-                AppSpeak.say("Hadir, bos.")
-                return
+            input.contains("mode normal") -> {
+                ModeManager.setNormalMode(); return
             }
-
-            input.contains("bung smart off") -> {
-                AppState.aiMode = AppState.AiMode.PASSIVE_AWARE
-                AppSpeak.say("Yaudah, gue minggir dulu.")
+            input.contains("putar lagu") || input.contains("setelin musik") -> {
+                MusicContext.playForMood(AppState.emotion); return
+            }
+            input.contains("ingatkan") && input.contains("fix") -> {
+                // contoh parsing sederhana
+                SmartReminder.scheduleIfConfirmed(
+                    title = "janjian",
+                    dateTime = LocalDateTime.now().plusHours(2)
+                )
+                AppSpeak.say("Siap. Gue ingetin.")
                 return
             }
         }
 
-        // TANPA KEYWORD = DIANGGAP ISI / OBROLAN
         if (NavigationStateManager.getState()
             == NavigationStateManager.State.WAITING_USER_RESPONSE
         ) {
@@ -42,25 +40,18 @@ object SpeechCommandProcessor {
             return
         }
 
-        // NGOBROL BEBAS
         activeTopic = inferTopic(input)
-
-        val response =
-            GroqAiEngine.chat(
-                input,
-                activeTopic,
-                AppState.emotion
-            )
-
+        val response = GroqAiEngine.chat(
+            input, activeTopic, AppState.emotion
+        )
         AppSpeak.say(response)
     }
 
-    private fun inferTopic(text: String): String {
-        return when {
+    private fun inferTopic(text: String): String =
+        when {
             text.contains("cewek") || text.contains("dia") -> "relationship"
             text.contains("capek") || text.contains("stress") -> "emotion"
             text.contains("game") -> "game"
             else -> "random"
         }
-    }
 }
