@@ -5,40 +5,30 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.smarteyex.core.databinding.FragmentCameraBinding
 
 class CameraFragment : Fragment() {
 
-    private lateinit var binding: FragmentCameraBinding
-    private lateinit var cameraController: CameraController
-    private lateinit var motionAnalyzer: MotionAnalyzer
+    private lateinit var controller: CameraController
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        binding = FragmentCameraBinding.inflate(inflater, container, false)
-        return binding.root
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        return View(requireContext())
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        cameraController = CameraController(requireContext(), viewLifecycleOwner)
-        motionAnalyzer = MotionAnalyzer()
-
-        // Start kamera dengan HUD
-        cameraController.startCamera(binding.cameraView.surfaceProvider)
-
-        // Analisis gerakan untuk trigger AI
-        motionAnalyzer.startAnalysis { motionDetected ->
-            if (motionDetected) {
-                GroqAiEngine().generateRandomResponse { response ->
-                    VoiceEngine().speak(response)
-                }
-            }
+        controller = CameraController(requireContext(), this)
+        controller.start { frame ->
+            VisionMemory.processFrame(frame)
         }
+
+        AppSpeak.say("Kamera nyala. Mau nanya apa?")
     }
 
     override fun onDestroyView() {
+        controller.stop()
         super.onDestroyView()
-        cameraController.stopCamera()
-        motionAnalyzer.stopAnalysis()
     }
 }
