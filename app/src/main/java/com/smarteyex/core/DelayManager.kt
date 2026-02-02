@@ -1,20 +1,19 @@
 package com.smarteyex.core
 
-import android.os.Handler
-import android.os.Looper
+import kotlinx.coroutines.delay
+import kotlin.random.Random
 
-class DelayManager {
+object DelayManager {
 
-    private val handler = Handler(Looper.getMainLooper())
-
-    // Fungsi untuk debounce aksi (e.g., delay notifikasi)
-    fun debounce(delayMillis: Long, action: () -> Unit) {
-        handler.removeCallbacksAndMessages(null)
-        handler.postDelayed(action, delayMillis)
+    suspend fun shortHumanDelay() {
+        delay(Random.nextLong(600, 1200))
     }
 
-    // Fungsi untuk schedule aksi
-    fun schedule(delayMillis: Long, action: () -> Unit) {
-        handler.postDelayed(action, delayMillis)
+    suspend fun bubbleMergeDelay() {
+        delay(Random.nextLong(1200, 2000))
+    }
+
+    suspend fun thinkingDelay() {
+        delay(Random.nextLong(800, 1600))
     }
 }
