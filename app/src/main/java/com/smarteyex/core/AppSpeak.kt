@@ -1,28 +1,41 @@
 package com.smarteyex.core
 
 import android.content.Context
-import android.speech.tts.TextToSpeech
-import java.util.*
 
-class AppSpeak(private val context: Context) {
+object AppSpeak {
 
-    private var tts: TextToSpeech? = null
+    private var engine: VoiceEngine? = null
 
-    init {
-        tts = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                tts?.language = Locale("id", "ID")  // Bahasa Indonesia, bisa disesuaikan
-            }
+    fun init(context: Context, onResult: (String) -> Unit) {
+        if (engine == null) {
+            engine = VoiceEngine(context, onResult)
         }
     }
 
-    // Fungsi untuk berbicara dengan gaya Gen Z (cepat, santai)
-    fun speakGenZ(text: String) {
-        val genZText = "Yo, $text bro!"  // Modifikasi sederhana untuk gaya Gen Z
-        tts?.speak(genZText, TextToSpeech.QUEUE_FLUSH, null, null)
+    fun say(text: String) {
+        if (NavigationStateManager.isBusy()) return
+        NavigationStateManager.setState(
+            NavigationStateManager.State.SPEAKING
+        )
+        engine?.speak(text)
+        NavigationStateManager.setState(
+            NavigationStateManager.State.IDLE
+        )
     }
 
-    fun shutdown() {
-        tts?.shutdown()
+    fun listen() {
+        if (AppState.userMode == AppState.UserMode.GAME &&
+            AppState.aiMode != AppState.AiMode.ACTIVE
+        ) return
+
+        NavigationStateManager.setState(
+            NavigationStateManager.State.LISTENING
+        )
+        engine?.listen()
+    }
+
+    fun destroy() {
+        engine?.shutdown()
+        engine = null
     }
 }
