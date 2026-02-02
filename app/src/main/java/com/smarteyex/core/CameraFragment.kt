@@ -1,9 +1,7 @@
 package com.smarteyex.core
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import androidx.fragment.app.Fragment
 
 class CameraFragment : Fragment() {
@@ -15,20 +13,27 @@ class CameraFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        return View(requireContext())
+        return inflater.inflate(
+            R.layout.fragment_camera,
+            container,
+            false
+        )
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        controller = CameraController(requireContext(), this)
-        controller.start { frame ->
-            VisionMemory.processFrame(frame)
-        }
+        controller = CameraController(
+            requireContext(),
+            viewLifecycleOwner
+        )
+        controller.startCamera()
 
-        AppSpeak.say("Kamera nyala. Mau nanya apa?")
+        AppSpeak.say(
+            "Kamera nyala. Tanya aja, gue liat."
+        )
     }
 
     override fun onDestroyView() {
-        controller.stop()
+        controller.stopCamera()
         super.onDestroyView()
     }
 }
