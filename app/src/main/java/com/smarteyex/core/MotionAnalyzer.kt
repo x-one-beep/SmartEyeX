@@ -1,16 +1,26 @@
 package com.smarteyex.core
 
-class NavigationStateManager {
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageProxy
+import java.util.concurrent.atomic.AtomicBoolean
 
-    // Track state navigasi UI (e.g., panel aktif)
-    private var currentPanel: String = "dashboard"  // dashboard, ai_chat, wa_panel, etc.
+class MotionAnalyzer(
+    private val onFrame: (ImageProxy) -> Unit
+) : ImageAnalysis.Analyzer {
 
-    // Fungsi untuk switch panel
-    fun switchToPanel(panel: String) {
-        currentPanel = panel
-        // Logika untuk update UI (e.g., show/hide fragments)
+    private val running = AtomicBoolean(true)
+
+    override fun analyze(image: ImageProxy) {
+        if (!running.get()) {
+            image.close()
+            return
+        }
+
+        onFrame(image)
+        image.close()
     }
 
-    // Getter untuk panel aktif
-    fun getCurrentPanel(): String = currentPanel
+    fun stop() {
+        running.set(false)
+    }
 }
