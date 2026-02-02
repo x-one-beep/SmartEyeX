@@ -10,6 +10,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
     <application
+    android:name=".core.SmartEyeXApp"
+    ...
+>
         android:allowBackup="true"
         android:label="SmartEyeX"
         android:icon="@mipmap/ic_launcher"
