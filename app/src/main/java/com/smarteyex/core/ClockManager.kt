@@ -1,39 +1,24 @@
 package com.smarteyex.core
 
-import android.content.Context
-import android.os.Handler
-import android.os.Looper
-import android.widget.TextView
-import java.text.SimpleDateFormat
-import java.util.*
+import kotlinx.coroutines.*
 
-class ClockManager(private val context: Context, private val clockTextView: TextView) {
+object ClockManager {
 
-    private val handler = Handler(Looper.getMainLooper())
-    private val dateFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-    private var isRunning = false
+    private var job: Job? = null
 
-    // Fungsi untuk start jam real-time
-    fun startClock() {
-        isRunning = true
-        updateClock()
-    }
-
-    // Fungsi untuk stop jam
-    fun stopClock() {
-        isRunning = false
-        handler.removeCallbacksAndMessages(null)
-    }
-
-    private fun updateClock() {
-        if (isRunning) {
-            clockTextView.text = dateFormat.format(Date())
-            handler.postDelayed({ updateClock() }, 1000)
+    fun start() {
+        job = CoroutineScope(Dispatchers.Default).launch {
+            while (isActive) {
+                val idleTime = System.currentTimeMillis() - AppState.lastActiveTimestamp
+                if (idleTime > 5 * 60 * 1000) {
+                    AppState.aiMode = AppState.AiMode.PASSIVE_AWARE
+                }
+                delay(30_000)
+            }
         }
     }
 
-    // Fungsi untuk set alarm (placeholder)
-    fun setAlarm(hour: Int, minute: Int) {
-        // Implementasi alarm sederhana
+    fun stop() {
+        job?.cancel()
     }
 }
