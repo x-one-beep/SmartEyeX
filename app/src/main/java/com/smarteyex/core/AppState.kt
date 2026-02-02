@@ -1,17 +1,51 @@
 package com.smarteyex.core
 
-class AppState {
+object AppState {
 
-    // Track state aplikasi (e.g., mode AI aktif)
-    var isAIModeActive: Boolean = false
-    var currentMode: String = "idle"  // idle, chat, wa_reply, etc.
-
-    // Fungsi untuk update state
-    fun setMode(mode: String) {
-        currentMode = mode
-        isAIModeActive = mode != "idle"
+    enum class AiMode {
+        ACTIVE,
+        PASSIVE_AWARE,
+        SLEEP
     }
 
-    // Getter untuk state
-    fun getCurrentMode(): String = currentMode
+    enum class Emotion {
+        NETRAL,
+        SANTAI,
+        CAPEK,
+        KESEL,
+        SENENG,
+        EMPATI,
+        FOKUS
+    }
+
+    enum class UserMode {
+        NORMAL,
+        SEKOLAH,
+        GAME
+    }
+
+    @Volatile
+    var aiMode: AiMode = AiMode.ACTIVE
+
+    @Volatile
+    var emotion: Emotion = Emotion.NETRAL
+
+    @Volatile
+    var userMode: UserMode = UserMode.NORMAL
+
+    @Volatile
+    var isSpeaking: Boolean = false
+
+    @Volatile
+    var isListening: Boolean = false
+
+    @Volatile
+    var lastActiveTimestamp: Long = System.currentTimeMillis()
+
+    fun updateActivity() {
+        lastActiveTimestamp = System.currentTimeMillis()
+        if (aiMode != AiMode.ACTIVE) {
+            aiMode = AiMode.ACTIVE
+        }
+    }
 }
