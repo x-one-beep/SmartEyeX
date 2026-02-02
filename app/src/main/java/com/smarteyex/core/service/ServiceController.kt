@@ -1,21 +1,19 @@
 package com.smarteyex.core.service
 
 import android.content.Context
-import com.smarteyex.core.VoiceService
+import android.os.Build
+import android.os.PowerManager
 
 object ServiceController {
 
-    private var voiceService: VoiceService? = null
-
-    fun startAll(context: Context) {
-        if (voiceService == null) {
-            voiceService = VoiceService(context)
-            voiceService?.start()
-        }
+    fun isBatteryOptimized(context: Context): Boolean {
+        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            pm.isIgnoringBatteryOptimizations(context.packageName)
+        } else true
     }
 
-    fun stopAll() {
-        voiceService?.stop()
-        voiceService = null
+    fun requestBatteryExclusion(context: Context) {
+        // Intent untuk user exclude battery optimization
     }
 }
