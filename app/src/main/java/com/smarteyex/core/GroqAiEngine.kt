@@ -1,30 +1,55 @@
 package com.smarteyex.core.ai
 
-import android.graphics.Bitmap
 import com.smarteyex.core.state.AppState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.smarteyex.core.memory.MemoryManager
+import com.smarteyex.core.voice.VoiceResponse
+import kotlin.random.Random
 
-object GroqAiEngine {
+class GroqAiEngine(private val appState: AppState, private val memoryManager: MemoryManager) {
 
-    fun processCameraFrame(frame: Bitmap, callback: (String) -> Unit) {
-        CoroutineScope(Dispatchers.Default).launch {
-            // Simulasi AI Vision processing
-            val detected = "Detected object or text"
-            callback(detected)
+    /**
+     * Generate live response untuk SmartEyeXService
+     */
+    fun generateLiveResponse(
+        speech: String,
+        emotion: AppState.Emotion,
+        context: AppState.Context
+    ): VoiceResponse {
+
+        // ===============================
+        // Ambil memory dan konteks
+        // ===============================
+        val recentMemory = memoryManager.getRecentMemory()
+        val userMood = appState.currentEmotion
+
+        // ===============================
+        // Tentuin personality & tone
+        // ===============================
+        val baseResponses = listOf(
+            "Oh gitu ya… menarik juga!",
+            "Hmm, gue ngerti kok.",
+            "Haha, iya sih…",
+            "Wah, keren tuh!"
+        )
+
+        // ===============================
+        // Variasi sesuai mood user
+        // ===============================
+        val finalText = when (userMood) {
+            AppState.Emotion.SENANG -> baseResponses.random() + " Seneng banget liat kamu happy!"
+            AppState.Emotion.CAPEK -> "Ahh, capek ya… santai dulu, jangan dipaksain."
+            AppState.Emotion.SEDIH -> "Duh, gue ngerti perasaan lo… tetap kuat ya."
+            AppState.Emotion.MARAH -> "Tenang dulu ya… jangan buru-buru ambil keputusan."
+            else -> baseResponses.random()
         }
-    }
 
-    fun processChatMessage(message: String, callback: (String) -> Unit) {
-        CoroutineScope(Dispatchers.Default).launch {
-            // Simulasi AI generasi respon
-            val reply = "AI reply for: $message"
-            callback(reply)
-        }
-    }
-
-    fun rememberFact(key: String, value: String) {
-        AppState.memoryList.add(AppState.MemoryItem(key, value))
+        // ===============================
+        // Bisa nambahin nimbrung sosial / gen-Z style nanti
+        // ===============================
+        return VoiceResponse(
+            text = finalText,
+            emotion = userMood,
+            shouldSpeak = true
+        )
     }
 }
