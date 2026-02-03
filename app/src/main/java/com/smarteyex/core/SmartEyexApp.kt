@@ -1,84 +1,155 @@
 package com.smarteyex.core
 
-import android.app.Application
+import android.app.Service
+import android.content.Context
+import android.content.Intent
+import android.os.IBinder
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.lifecycleScope
 import com.smarteyex.core.state.AppState
 import com.smarteyex.core.voice.VoiceEngine
 import com.smarteyex.core.voice.VoiceService
-import com.smarteyex.core.ai.GroqAiEngine
-import com.smarteyex.core.memory.MemoryManager
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
-class SmartEyeXApp : Application() {
+class SmartEyeXService : LifecycleService() {
 
-    // ===============================
-    // CORE STATE
-    // ===============================
-    lateinit var appState: AppState
-        private set
+    companion object {
+        fun startService(context: Context) {
+            val intent = Intent(context, SmartEyeXService::class.java)
+            context.startService(intent)
+        }
+    }
 
-    // ===============================
-    // VOICE
-    // ===============================
-    lateinit var voiceEngine: VoiceEngine
-        private set
-    lateinit var voiceService: VoiceService
-        private set
-
-    // ===============================
-    // AI
-    // ===============================
-    lateinit var aiEngine: GroqAiEngine
-        private set
-
-    // ===============================
-    // MEMORY
-    // ===============================
-    lateinit var memoryManager: MemoryManager
-        private set
-
-    // ===============================
-    // NOTIF & COMMAND
-    // ===============================
-    lateinit var notificationListener: NotificationListener
-        private set
-    lateinit var speechCommand: SpeechCommand
-        private set
-    lateinit var motionAnalyzer: MotionAnalyzer
-        private set
+    private lateinit var appState: AppState
+    private lateinit var voiceEngine: VoiceEngine
+    private lateinit var voiceService: VoiceService
+    private lateinit var aiEngine: GroqAiEngine
+    private lateinit var memoryManager: MemoryManager
+    private lateinit var notificationListener: NotificationListener
+    private lateinit var speechCommand: SpeechCommand
+    private lateinit var motionAnalyzer: MotionAnalyzer
+    private lateinit var waReplyManager: WAReplyManager
 
     override fun onCreate() {
         super.onCreate()
 
-        // -------------------------------
-        // 1️⃣ INIT APP STATE
-        // -------------------------------
-        appState = AppState()
+        val app = application as SmartEyeXApp
+        appState = app.appState
+        voiceEngine = app.voiceEngine
+        voiceService = app.voiceService
+        aiEngine = app.aiEngine
+        memoryManager = app.memoryManager
+        notificationListener = app.notificationListener
+        speechCommand = app.speechCommand
+        motionAnalyzer = app.motionAnalyzer
+        waReplyManager = WAReplyManager(appState, aiEngine)
 
-        // -------------------------------
-        // 2️⃣ INIT VOICE
-        // -------------------------------
-        voiceEngine = VoiceEngine(appState)
-        voiceService = VoiceService(appState)
+        startVoiceListening()
+        observeAppContext()
+        startNotificationListener()
+        speechCommand.startListening()
+        motionAnalyzer.start()
+    }
 
-        // -------------------------------
-        // 3️⃣ INIT MEMORY
-        // -------------------------------
-        memoryManager = MemoryManager(appState)
+    override fun onBind(intent: Intent): IBinder? {
+        super.onBind(intent)
+        return null
+    }
 
-        // -------------------------------
-        // 4️⃣ INIT AI ENGINE
-        // -------------------------------
-        aiEngine = GroqAiEngine(appState, memoryManager)
+    /** ===============================
+     * ALWAYS LISTENING & AI REACTION
+     * ===============================
+     */
+    private fun startVoiceListening() {
+        lifecycleScope.launch {
+            voiceEngine.startListening { speech ->
+                if (!appState.isMicAllowed()) return@startListening
+                if (appState.isConversationCrowded) return@startListening
 
-        // -------------------------------
-        // 5️⃣ INIT NOTIF & COMMAND
-        // -------------------------------
-        notificationListener = NotificationListener(appState)
-        speechCommand = SpeechCommand(appState)
-        motionAnalyzer = MotionAnalyzer(appState)
+                appState.updateFromSpeech(speech)
+                memoryManager.addMemory(
+                    MemoryItem(
+                        id = System.currentTimeMillis().toString(),
+                        text = speech,
+                        importance = 3
+                    )
+                )
 
-        // -------------------------------
-        // 6️⃣ START BACKGROUND SERVICE
-        // -------------------------------
-        SmartEyeXService.startService(this)
+                if (!shouldAiReact(speech)) return@startListening
+                handleLiveConversation(speech)
+            }
+        }
+    }
+
+    /** ===============================
+     * OBSERVE APP CONTEXT & ADAPTIF
+     * ===============================
+     */
+    private fun observeAppContext() {
+        lifecycleScope.launch {
+            appState.stateFlow.collect { state ->
+                voiceEngine.adjustSensitivity(
+                    emotion = state.emotion,
+                    mode = state.currentMode,
+                    batteryLow = state.isBatteryLow
+                )
+            }
+        }
+    }
+
+    /** ===============================
+     * LIVE CONVERSATION
+     * ===============================
+     */
+    private suspend fun handleLiveConversation(speech: String) {
+        delay((400L..800L).random()) // jeda alami
+
+        val response = aiEngine.generateLiveResponse(
+            speech = speech,
+            emotion = appState.currentEmotion,
+            context = appState.currentContext
+        )
+
+        if (!response.shouldSpeak) return
+
+        voiceService.speak(
+            text = response.text,
+            emotion = appState.currentEmotion
+        )
+    }
+
+    /** ===============================
+     * AI SELF-RESTRAINT LOGIC
+     * ===============================
+     */
+    private fun shouldAiReact(speech: String): Boolean {
+        if (appState.currentEmotion.isOverwhelmed()) return false
+        if (appState.isUserBusy) return false
+        if (!speech.containsTriggerForAi()) return false
+        if (appState.isAIResting) return false
+        return true
+    }
+
+    /** ===============================
+     * NOTIFICATION LISTENER & WA REPLY
+     * ===============================
+     */
+    private fun startNotificationListener() {
+        notificationListener.setOnNewNotification { notif ->
+            lifecycleScope.launch {
+                // cek konteks user
+                if (appState.isUserBusy || appState.currentEmotion.isOverwhelmed()) return@launch
+
+                // AI tanya user dulu
+                voiceService.speak(
+                    "Lo dapet notifikasi baru, mau gue bantu balas?",
+                    appState.currentEmotion
+                )
+
+                // WA reply manager handle jika user setuju
+                waReplyManager.queueNotification(notif)
+            }
+        }
     }
 }
