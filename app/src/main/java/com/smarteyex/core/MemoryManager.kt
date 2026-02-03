@@ -1,22 +1,42 @@
-package com.smarteyex.core
+package com.smarteyex.core.memory
 
-import android.content.Context
-import android.content.SharedPreferences
+import com.smarteyex.core.state.AppState
 
-class MemoryManager(private val context: Context) {
+data class MemoryItem(
+    val id: String,
+    val text: String,
+    val timestamp: Long = System.currentTimeMillis(),
+    val importance: Int = 1 // 1–5, 5 paling penting
+)
 
-    private val prefs: SharedPreferences = context.getSharedPreferences("SmartEyeX", Context.MODE_PRIVATE)
+class MemoryManager {
 
-    // Fungsi untuk simpan percakapan
-    fun saveConversation(conversation: String) {
-        prefs.edit().putString("conversation", conversation).apply()
+    private val memory = mutableListOf<MemoryItem>()
+
+    /**
+     * Simpan memory secara selektif
+     */
+    fun addMemory(item: MemoryItem) {
+        memory.add(item)
+        trimMemory()
     }
 
-    // Fungsi untuk load percakapan
-    fun loadConversation(): String = prefs.getString("conversation", "") ?: ""
+    /**
+     * Ambil memory terbaru / penting
+     */
+    fun getRecentMemory(count: Int = 5): List<MemoryItem> {
+        return memory.sortedByDescending { it.timestamp }.take(count)
+    }
 
-    // Fungsi untuk simpan data wajah/suara (placeholder)
-    fun saveFaceData(data: String) {
-        prefs.edit().putString("face_data", data).apply()
+    /**
+     * Hemat memori → simpan yang penting, buang paling lama
+     */
+    private fun trimMemory(maxSize: Int = 50) {
+        if (memory.size > maxSize) {
+            memory.sortBy { it.importance } // buang yang paling tidak penting
+            while (memory.size > maxSize) {
+                memory.removeAt(0)
+            }
+        }
     }
 }
