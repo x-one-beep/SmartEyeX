@@ -1,22 +1,57 @@
 package com.smarteyex.core
 
-import com.smarteyex.core.ai.GroqAiEngine
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentLinkedQueue
 
-/**
- * WAReplyManager
- * Handle logika reply WA sesuai self-restraint & konteks
- */
-class WAReplyManager(private val aiEngine: GroqAiEngine) {
+class WAReplyManager(
+    private val appState: AppState,
+    private val aiEngine: GroqAiEngine
+) {
 
-    fun generateReply(notifText: String): String {
-        // Gunakan GroqAI untuk rekomendasi balasan
-        return aiEngine.generateNotificationReply(notifText)
+    private val queue = ConcurrentLinkedQueue<WAIncomingMessage>()
+    private val scope = CoroutineScope(Dispatchers.Default)
+
+    fun queueNotification(notif: WAIncomingMessage) {
+        queue.add(notif)
+        processQueue()
     }
 
-    fun shouldReply(userBusy: Boolean, emotion: com.smarteyex.core.state.AppState.Emotion): Boolean {
-        // Self-restraint logic WA
-        if (userBusy) return false
-        if (emotion.isOverwhelmed()) return false
-        return true
+    private fun processQueue() {
+        scope.launch {
+            while (queue.isNotEmpty()) {
+                val notif = queue.poll() ?: continue
+
+                // Cek self-restraint
+                if (appState.isUserBusy || appState.currentEmotion.isOverwhelmed() || appState.isAIResting) continue
+
+                // Generate response AI
+                val response = aiEngine.generateLiveResponse(
+                    speech = notif.message,
+                    emotion = appState.currentEmotion,
+                    context = appState.currentContext
+                )
+
+                if (!response.shouldSpeak) continue
+
+                // Tanyain user via VoiceService (SmartEyeXService sudah handle)
+                // Jika user setuju → kirim WA
+                WAAccessibilityServiceSingleton.sendMessage(notif.sender, response.text)
+            }
+        }
+    }
+}
+
+// Singleton untuk akses WAAccessibility dari mana saja
+object WAAccessibilityServiceSingleton {
+    private var service: WAAccessibility? = null
+
+    fun register(service: WAAccessibility) {
+        this.service = service
+    }
+
+    fun sendMessage(number: String, text: String) {
+        service?.sendMessage(number, text)
     }
 }
