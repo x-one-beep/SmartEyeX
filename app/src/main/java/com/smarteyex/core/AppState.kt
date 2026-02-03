@@ -22,8 +22,7 @@ class AppState {
     enum class Emotion {
         CAPEK, SENANG, SEDIH, MARAH, KOSONG;
 
-        fun isOverwhelmed(): Boolean =
-            this == MARAH || this == SEDIH
+        fun isOverwhelmed(): Boolean = this == MARAH || this == SEDIH
     }
 
     data class Context(
@@ -143,4 +142,10 @@ class AppState {
             lastInteractionMs = System.currentTimeMillis()
         )
     }
+
+    // ===============================
+    // MEMORY / AI HOOKS
+    // ===============================
+    // Placeholder, bisa dihubungkan ke MemoryManager & AI engine
+    val memoryHook: MutableList<String> = mutableListOf()
 }
