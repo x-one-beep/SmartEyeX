@@ -1,36 +1,50 @@
 package com.smarteyex.core
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Intent
 import android.view.accessibility.AccessibilityEvent
+import android.widget.Toast
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-/**
- * WAAccessibility
- * Akses WA via AccessibilityService
- * Bisa baca pesan masuk, kirim pesan, dan track kontek sosial
- */
 class WAAccessibility : AccessibilityService() {
 
-    var onNewMessage: ((String, String) -> Unit)? = null
+    private val coroutineScope = CoroutineScope(Dispatchers.Main)
+    var onMessageReceived: ((WAIncomingMessage) -> Unit)? = null
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
-        val pkg = event.packageName?.toString() ?: return
-        if (pkg != "com.whatsapp") return
+        // Cek notif WA
+        if (event.packageName == "com.whatsapp" && event.eventType == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
+            val msgText = event.text?.joinToString(" ") ?: return
+            val sender = event.contentDescription?.toString() ?: "Unknown"
 
-        val text = event.text?.joinToString(" ") ?: return
-
-        // Callback ke AI / SmartEyeXService
-        onNewMessage?.invoke(pkg, text)
+            val incoming = WAIncomingMessage(sender, msgText)
+            coroutineScope.launch {
+                onMessageReceived?.invoke(incoming)
+            }
+        }
     }
 
-    override fun onInterrupt() {}
-    
-    /**
-     * Kirim WA via service
-     */
-    fun sendMessage(to: String, message: String) {
+    override fun onInterrupt() {
+        // Tidak perlu
+    }
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        Toast.makeText(this, "WA Accessibility Ready", Toast.LENGTH_SHORT).show()
+    }
+
+    fun sendMessage(number: String, text: String) {
         // Placeholder: integrasi nanti dengan Accessibility API
-        // Bisa pakai Intent ACTION_SEND atau Accessibility node
+        // Bisa pakai Intent ACTION_SEND atau Accessibility
+        Toast.makeText(this, "Send WA to $number: $text", Toast.LENGTH_SHORT).show()
     }
 }
+
+data class WAIncomingMessage(
+    val sender: String,
+    val message: String
+)
