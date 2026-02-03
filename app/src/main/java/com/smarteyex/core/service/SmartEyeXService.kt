@@ -10,6 +10,7 @@ import com.smarteyex.core.state.AppState
 import com.smarteyex.core.voice.VoiceEngine
 import com.smarteyex.core.voice.VoiceService
 import com.smarteyex.core.ai.GroqAiEngine
+import com.smarteyex.core.memory.MemoryManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -19,6 +20,7 @@ class SmartEyeXService : LifecycleService() {
     private lateinit var voiceEngine: VoiceEngine
     private lateinit var voiceService: VoiceService
     private lateinit var aiEngine: GroqAiEngine
+    private lateinit var memoryManager: MemoryManager
 
     override fun onCreate() {
         super.onCreate()
@@ -28,6 +30,7 @@ class SmartEyeXService : LifecycleService() {
         voiceEngine = app.voiceEngine
         voiceService = app.voiceService
         aiEngine = app.aiEngine
+        memoryManager = app.memoryManager
 
         startAlwaysListening()
         observeContext()
@@ -40,18 +43,30 @@ class SmartEyeXService : LifecycleService() {
 
     /**
      * ===============================
-     * ALWAYS LISTENING (ADAPTIF)
+     * ALWAYS LISTENING & LIVE PROCESS
      * ===============================
      */
     private fun startAlwaysListening() {
         lifecycleScope.launch {
             voiceEngine.startListening { speech ->
 
+                // Cek mic & crowd
                 if (!appState.isMicAllowed()) return@startListening
                 if (appState.isConversationCrowded) return@startListening
 
+                // Update emosi & konteks
                 appState.updateFromSpeech(speech)
 
+                // Simpan memory
+                memoryManager.addMemory(
+                    com.smarteyex.core.memory.MemoryItem(
+                        id = System.currentTimeMillis().toString(),
+                        text = speech,
+                        importance = 3
+                    )
+                )
+
+                // Cek AI harus nimbrung?
                 if (!shouldAiReact(speech)) return@startListening
 
                 handleLiveConversation(speech)
@@ -61,14 +76,12 @@ class SmartEyeXService : LifecycleService() {
 
     /**
      * ===============================
-     * LIVE CONTEXT OBSERVER
+     * OBSERVE APP CONTEXT
      * ===============================
-     * Waktu, emosi, mode, battery
      */
     private fun observeContext() {
         lifecycleScope.launch {
             appState.stateFlow.collect { state ->
-                // adaptif, tidak cerewet
                 voiceEngine.adjustSensitivity(
                     emotion = state.emotion,
                     mode = state.currentMode,
@@ -80,7 +93,7 @@ class SmartEyeXService : LifecycleService() {
 
     /**
      * ===============================
-     * AI LIVE RESPONSE
+     * HANDLE AI RESPONSE
      * ===============================
      */
     private suspend fun handleLiveConversation(speech: String) {
@@ -102,7 +115,7 @@ class SmartEyeXService : LifecycleService() {
 
     /**
      * ===============================
-     * SELF RESTRAINT CORE
+     * SELF-RESTRAINT / NIMBRUNG LOGIC
      * ===============================
      */
     private fun shouldAiReact(speech: String): Boolean {
