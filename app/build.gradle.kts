@@ -58,6 +58,11 @@ android {
 val cameraxVersion = "1.3.2"
 
 dependencies {
+    implementation "androidx.lifecycle:lifecycle-service:2.6.2"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2"
+    // ...dependencies lain
+}
 
     // CameraX
     implementation("androidx.camera:camera-core:$cameraxVersion")
