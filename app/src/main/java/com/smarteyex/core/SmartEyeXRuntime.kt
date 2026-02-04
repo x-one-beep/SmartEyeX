@@ -5,6 +5,8 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import android.os.SystemClock
 import android.speech.tts.TextToSpeech
+import androidx.lifecycle.LifecycleService
+
 /* =========================================================
 SmartEyeX Runtime Extensions
 TIDAK MENGUBAH SmartEyeXServiceFinal
