@@ -27,7 +27,9 @@
         <!-- ========================================================= -->
         <!-- MAIN ACTIVITY                                            -->
         <!-- ========================================================= -->
-        <activity android:name=".MainActivity">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -37,30 +39,34 @@
         <!-- ========================================================= -->
         <!-- OTHER ACTIVITIES                                         -->
         <!-- ========================================================= -->
-        <activity android:name=".CameraActivity"/>
-        <activity android:name=".MemoryActivity"/>
-        <activity android:name=".SettingsActivity"/>
-        <activity android:name=".LoginActivity"/>
-        <activity android:name=".TransparencyCenterActivity"/>
+        <activity android:name=".CameraActivity" android:exported="false"/>
+        <activity android:name=".MemoryActivity" android:exported="false"/>
+        <activity android:name=".SettingsActivity" android:exported="false"/>
+        <activity android:name=".LoginActivity" android:exported="false"/>
+        <activity android:name=".TransparencyCenterActivity" android:exported="false"/>
 
         <!-- ========================================================= -->
         <!-- CORE SERVICES                                            -->
         <!-- ========================================================= -->
         <service
             android:name=".SmartEyeXService"
-            android:foregroundServiceType="microphone|camera"/>
+            android:foregroundServiceType="microphone|camera"
+            android:exported="false"/>
         <service
             android:name=".SmartEyeXServiceFinal"
-            android:foregroundServiceType="microphone|camera"/>
+            android:foregroundServiceType="microphone|camera"
+            android:exported="false"/>
         <service
-            android:name=".SecurityBootService"/>
+            android:name=".SecurityBootService"
+            android:exported="false"/>
 
         <!-- ========================================================= -->
         <!-- ACCESSIBILITY SERVICES                                   -->
         <!-- ========================================================= -->
         <service
             android:name=".WAAccessibilityService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService"/>
             </intent-filter>
@@ -69,7 +75,8 @@
         <!-- ========================================================= -->
         <!-- ADDITIONAL SERVICES / HELPERS                             -->
         <!-- ========================================================= -->
-        <!-- Misal ada OnboardingFlowController, PublicSafetyLayer, dsb, tidak perlu deklarasi service kecuali Service class -->
+        <!-- OnboardingFlowController, PublicSafetyLayer, PartnerIdamanEngine, dll -->
+        <!-- Tidak perlu deklarasi service kecuali classnya extend Service -->
 
     </application>
 </manifest>
