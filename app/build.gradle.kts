@@ -43,14 +43,13 @@ android {
 }
 
 dependencies {
-    implementation("androidx.lifecycle:lifecycle-service:2.6.2")
-}
+    // Lifecycle
+    implementation("androidx.lifecycle:lifecycle-service:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
 
-    // AndroidX + Lifecycle
+    // AndroidX
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.activity:activity-ktx:1.9.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    implementation("androidx.lifecycle:lifecycle-service:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     // CameraX
@@ -76,5 +75,4 @@ dependencies {
     // JSON & HTTP
     implementation("org.json:json:20230227")
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
-}
 }
