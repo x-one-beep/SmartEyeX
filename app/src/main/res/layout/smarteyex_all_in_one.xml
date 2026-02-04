@@ -1,0 +1,203 @@
+<!-- ========================================================= -->
+<!-- SMART EYE X : UI + MANIFEST (ALL IN ONE)                  -->
+<!-- FILE 5 - TAMBAHAN MURNI                                  -->
+<!-- ========================================================= -->
+
+
+<!-- ========================================================= -->
+<!-- ANDROID MANIFEST                                         -->
+<!-- ========================================================= -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.smarteyex.core">
+
+    <!-- Permissions -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+
+    <application
+        android:allowBackup="true"
+        android:label="SmartEyeX"
+        android:theme="@style/Theme.AppCompat.NoActionBar"
+        android:usesCleartextTraffic="true">
+
+        <!-- MAIN -->
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".CameraActivity"/>
+        <activity android:name=".MemoryActivity"/>
+        <activity android:name=".SettingsActivity"/>
+
+        <!-- CORE SERVICES -->
+        <service
+            android:name=".SmartEyeXService"
+            android:foregroundServiceType="microphone|camera"/>
+
+        <service
+            android:name=".SmartEyeXServiceFinal"
+            android:foregroundServiceType="microphone|camera"/>
+
+        <!-- ACCESSIBILITY -->
+        <service
+            android:name=".WAAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService"/>
+            </intent-filter>
+        </service>
+
+    </application>
+</manifest>
+
+
+<!-- ========================================================= -->
+<!-- MAIN ACTIVITY UI                                         -->
+<!-- ========================================================= -->
+<FrameLayout
+    android:id="@+id/mainRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <TextView
+        android:id="@+id/title"
+        android:text="SmartEyeX"
+        android:textSize="26sp"
+        android:textColor="#00FFFF"
+        android:layout_gravity="top|center"
+        android:padding="24dp"/>
+
+    <!-- VOICE WAVE -->
+    <View
+        android:id="@+id/voiceWave"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_gravity="center"
+        android:background="#112233"/>
+
+    <!-- VOICE BUTTON -->
+    <Button
+        android:id="@+id/voiceButton"
+        android:text="TALK"
+        android:textColor="#000000"
+        android:background="#00FFFF"
+        android:layout_gravity="bottom|center"
+        android:layout_marginBottom="48dp"
+        android:layout_width="200dp"
+        android:layout_height="200dp"/>
+
+    <!-- USER BUSY OVERLAY -->
+    <TextView
+        android:id="@+id/userBusyOverlay"
+        android:text="User sedang sibuk"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:background="#AA000000"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+</FrameLayout>
+
+
+<!-- ========================================================= -->
+<!-- SETTINGS UI                                              -->
+<!-- ========================================================= -->
+<ScrollView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <Switch
+            android:id="@+id/switchVoice"
+            android:text="Voice AI"
+            android:textColor="#FFFFFF"/>
+
+        <Switch
+            android:id="@+id/switchUserBusy"
+            android:text="User Busy Mode"
+            android:textColor="#FFFFFF"/>
+
+        <Switch
+            android:id="@+id/switchPrivacy"
+            android:text="Privacy Guard"
+            android:textColor="#FFFFFF"/>
+
+        <Button
+            android:id="@+id/btnVoiceTrain"
+            android:text="Rekam Suara (Voice Identity)"
+            android:background="#00FFFF"/>
+
+    </LinearLayout>
+</ScrollView>
+
+
+<!-- ========================================================= -->
+<!-- MEMORY UI                                                -->
+<!-- ========================================================= -->
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#000000"
+    android:padding="16dp">
+
+    <TextView
+        android:text="Memory Log"
+        android:textColor="#FF00FF"
+        android:textSize="20sp"/>
+
+    <TextView
+        android:id="@+id/memoryList"
+        android:textColor="#FFFFFF"/>
+
+</LinearLayout>
+
+
+<!-- ========================================================= -->
+<!-- CAMERA UI                                                -->
+<!-- ========================================================= -->
+<FrameLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <TextView
+        android:text="Vision Mode"
+        android:textColor="#00FFFF"
+        android:layout_gravity="top|center"
+        android:padding="16dp"/>
+
+</FrameLayout>
+
+
+<!-- ========================================================= -->
+<!-- LOADING / NOTIFICATION CARD                              -->
+<!-- ========================================================= -->
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#222222"
+    android:padding="16dp">
+
+    <TextView
+        android:text="SmartEyeX sedang berpikir..."
+        android:textColor="#00FFFF"/>
+
+</LinearLayout>
