@@ -3,6 +3,8 @@ package com.smarteyex.core
 import android.content.Context
 import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentLinkedQueue
+import android.speech.tts.TextToSpeech
+
 
 /* --------------------------------------------
 VoiceEngine — capture suara & command
