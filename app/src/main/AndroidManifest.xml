@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.smarteyex.core">
+
+    <!-- ========================================================= -->
+    <!-- PERMISSIONS                                               -->
+    <!-- ========================================================= -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+
+    <!-- ========================================================= -->
+    <!-- APPLICATION                                               -->
+    <!-- ========================================================= -->
+    <application
+        android:allowBackup="true"
+        android:label="SmartEyeX"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/Theme.AppCompat.NoActionBar"
+        android:usesCleartextTraffic="true">
+
+        <!-- ========================================================= -->
+        <!-- MAIN ACTIVITY                                            -->
+        <!-- ========================================================= -->
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <!-- ========================================================= -->
+        <!-- OTHER ACTIVITIES                                         -->
+        <!-- ========================================================= -->
+        <activity android:name=".CameraActivity"/>
+        <activity android:name=".MemoryActivity"/>
+        <activity android:name=".SettingsActivity"/>
+        <activity android:name=".LoginActivity"/>
+        <activity android:name=".TransparencyCenterActivity"/>
+
+        <!-- ========================================================= -->
+        <!-- CORE SERVICES                                            -->
+        <!-- ========================================================= -->
+        <service
+            android:name=".SmartEyeXService"
+            android:foregroundServiceType="microphone|camera"/>
+        <service
+            android:name=".SmartEyeXServiceFinal"
+            android:foregroundServiceType="microphone|camera"/>
+        <service
+            android:name=".SecurityBootService"/>
+
+        <!-- ========================================================= -->
+        <!-- ACCESSIBILITY SERVICES                                   -->
+        <!-- ========================================================= -->
+        <service
+            android:name=".WAAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService"/>
+            </intent-filter>
+        </service>
+
+        <!-- ========================================================= -->
+        <!-- ADDITIONAL SERVICES / HELPERS                             -->
+        <!-- ========================================================= -->
+        <!-- Misal ada OnboardingFlowController, PublicSafetyLayer, dsb, tidak perlu deklarasi service kecuali Service class -->
+
+    </application>
+</manifest>
