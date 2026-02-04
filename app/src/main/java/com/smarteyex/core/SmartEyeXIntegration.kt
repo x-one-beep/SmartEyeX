@@ -6,18 +6,21 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.*
 
 /* =========================================================
-   FILE 20 — SmartEyeXIntegrator
-   Hub utama yang bikin semua dummy engine nyata
+   SmartEyeXIntegrator — dummy engine jadi nyata
+   API key otomatis ambil dari environment (GitHub secret)
 ========================================================= */
 
 class SmartEyeXIntegrator(
     private val context: Context,
-    private val service: LifecycleService? = null // optional kalau mau attach watchdog
+    private val service: LifecycleService? = null // optional untuk attach watchdog
 ) {
+
+    // Ambil API key dari environment / secret GitHub
+    private val groqApiKey = System.getenv("SMART_EYE_X_API_KEY") ?: "DUMMY_API_KEY"
 
     // Core engines
     private val voiceEngine = VoiceEngine(context)
-    private val aiEngine = GroqAiEngine("DUMMY_API_KEY")
+    private val aiEngine = GroqAiEngine(groqApiKey)
     private val memoryEngine = MemoryEngine
     private val voiceService = VoiceService(context)
     private val motionAnalyzer = MotionAnalyzer(context, memoryEngine)
@@ -66,7 +69,7 @@ class SmartEyeXIntegrator(
             SmartEyeXRuntime.lastVoiceDetectedAt = System.currentTimeMillis()
             // masuk memory
             memoryEngine.addMemory(MemoryItem(System.currentTimeMillis().toString(), "User said: $speech", 2))
-            // trigger AI
+            // trigger AI langsung
             handleAIResponse(speech)
         }
     }
@@ -80,7 +83,7 @@ class SmartEyeXIntegrator(
     }
 
     private fun startNotificationMonitoring() {
-        // Simulate polling notifications
+        // simulate polling notifikasi WA / sistem
         GlobalScope.launch {
             while (true) {
                 delay(3000)
@@ -98,7 +101,6 @@ class SmartEyeXIntegrator(
         if (!AppState.canAISpeakNow() || PublicSafetyLayer.isPaused()) return
 
         GlobalScope.launch {
-            // AI reply
             val reply = aiEngine.generateLiveResponse(speech, AppState.currentEmotion, AppState.currentContext)
             if (reply.shouldSpeak) voiceService.speak(reply.text, AppState.currentEmotion)
             memoryEngine.addMemory(MemoryItem(System.currentTimeMillis().toString(), "AI replied: ${reply.text}", 3))
