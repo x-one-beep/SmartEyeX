@@ -43,6 +43,8 @@ android {
 }
 
 dependencies {
+    implementation("androidx.lifecycle:lifecycle-service:2.6.2")
+}
 
     // AndroidX + Lifecycle
     implementation("androidx.appcompat:appcompat:1.7.0")
