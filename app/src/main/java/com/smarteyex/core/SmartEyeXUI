@@ -1,0 +1,223 @@
+package com.smarteyex.core
+
+import android.animation.*
+import android.content.Context
+import android.graphics.*
+import android.os.*
+import android.view.*
+import android.view.animation.DecelerateInterpolator
+import android.widget.*
+import androidx.cardview.widget.CardView
+import androidx.core.view.setPadding
+import kotlinx.coroutines.*
+import kotlin.math.abs
+
+/* =========================================================
+SmartEyeX UI Layer
+FILE 4 — FUTURISTIC • HUMAN • SAFE UI
+========================================================= */
+
+/* --------------------------------------------
+UI State tambahan (tidak ganggu AppState)
+-------------------------------------------- */
+object UiState {
+    var isLoading: Boolean = true
+    var isListeningAnim: Boolean = false
+    var lastInteraction: Long = System.currentTimeMillis()
+}
+
+/* --------------------------------------------
+SmartEyeXLoadingView
+Loading hidup, napas, berasa "ada"
+-------------------------------------------- */
+class SmartEyeXLoadingView(context: Context) : FrameLayout(context) {
+
+    private val pulse = View(context)
+
+    init {
+        setBackgroundColor(Color.BLACK)
+        pulse.setBackgroundColor(Color.CYAN)
+        addView(pulse, LayoutParams(200, 200, Gravity.CENTER))
+
+        pulse.background = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(Color.CYAN)
+        }
+
+        startPulse()
+    }
+
+    private fun startPulse() {
+        val scale = ObjectAnimator.ofFloat(pulse, "scaleX", 1f, 1.3f, 1f)
+        scale.repeatCount = ValueAnimator.INFINITE
+        scale.duration = 1400
+
+        val scaleY = ObjectAnimator.ofFloat(pulse, "scaleY", 1f, 1.3f, 1f)
+        scaleY.repeatCount = ValueAnimator.INFINITE
+        scaleY.duration = 1400
+
+        AnimatorSet().apply {
+            playTogether(scale, scaleY)
+            interpolator = DecelerateInterpolator()
+            start()
+        }
+    }
+}
+
+/* --------------------------------------------
+ListeningWaveView
+Animasi denger suara (idle ≠ busy)
+-------------------------------------------- */
+class ListeningWaveView(context: Context) : View(context) {
+
+    private val paint = Paint().apply {
+        color = Color.CYAN
+        strokeWidth = 6f
+        style = Paint.Style.STROKE
+    }
+
+    private var phase = 0f
+
+    fun start() {
+        UiState.isListeningAnim = true
+        invalidate()
+    }
+
+    fun stop() {
+        UiState.isListeningAnim = false
+        invalidate()
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        if (!UiState.isListeningAnim) return
+
+        val midY = height / 2f
+        val width = width.toFloat()
+
+        for (x in 0 until width.toInt() step 15) {
+            val y = midY + Math.sin((x + phase) * 0.05) * 30
+            canvas.drawPoint(x.toFloat(), y.toFloat(), paint)
+        }
+
+        phase += 10
+        postInvalidateDelayed(16)
+    }
+}
+
+/* --------------------------------------------
+SmartCard
+Card notif / respon AI / WA
+-------------------------------------------- */
+class SmartCard(context: Context) : CardView(context) {
+
+    private val text = TextView(context)
+
+    init {
+        radius = 32f
+        setCardBackgroundColor(Color.parseColor("#121212"))
+        setContentPadding(32, 32, 32, 32)
+        elevation = 12f
+
+        text.setTextColor(Color.WHITE)
+        text.textSize = 16f
+        addView(text)
+    }
+
+    fun bind(message: String, emotion: Emotion) {
+        text.text = message
+        alpha = 0f
+        animate().alpha(1f).setDuration(400).start()
+
+        when (emotion) {
+            Emotion.HAPPY -> setCardBackgroundColor(Color.parseColor("#1E88E5"))
+            Emotion.SAD -> setCardBackgroundColor(Color.parseColor("#455A64"))
+            Emotion.ANGRY -> setCardBackgroundColor(Color.parseColor("#B71C1C"))
+            Emotion.OVERWHELMED -> setCardBackgroundColor(Color.DKGRAY)
+            else -> setCardBackgroundColor(Color.parseColor("#121212"))
+        }
+    }
+}
+
+/* --------------------------------------------
+UserBusyOverlay
+Biar AI nggak salah paham
+-------------------------------------------- */
+class UserBusyOverlay(context: Context) : FrameLayout(context) {
+
+    private val label = TextView(context)
+
+    init {
+        setBackgroundColor(Color.parseColor("#AA000000"))
+        label.text = "User lagi sibuk"
+        label.setTextColor(Color.WHITE)
+        label.textSize = 18f
+        label.gravity = Gravity.CENTER
+        addView(label, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        visibility = GONE
+    }
+
+    fun show() {
+        visibility = VISIBLE
+        alpha = 0f
+        animate().alpha(1f).setDuration(300).start()
+    }
+
+    fun hide() {
+        animate().alpha(0f).setDuration(300).withEndAction {
+            visibility = GONE
+        }.start()
+    }
+}
+
+/* --------------------------------------------
+VoiceInteractionButton
+Tombol “sentuh = gue denger”
+-------------------------------------------- */
+class VoiceInteractionButton(context: Context) : FrameLayout(context) {
+
+    private val circle = View(context)
+
+    init {
+        addView(circle, LayoutParams(180, 180, Gravity.CENTER))
+        circle.background = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(Color.CYAN)
+        }
+
+        setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    UiState.lastInteraction = System.currentTimeMillis()
+                    SafetyState.manualUserBusy = false
+                    animatePress(true)
+                }
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> animatePress(false)
+            }
+            true
+        }
+    }
+
+    private fun animatePress(down: Boolean) {
+        val scale = if (down) 0.85f else 1f
+        animate().scaleX(scale).scaleY(scale).setDuration(120).start()
+    }
+}
+
+/* --------------------------------------------
+UiSafetyBinder
+Ngikat UI ↔ SafetyState
+-------------------------------------------- */
+object UiSafetyBinder {
+
+    fun updateBusyOverlay(overlay: UserBusyOverlay) {
+        if (UserBusyResolver.isUserBusy()) overlay.show()
+        else overlay.hide()
+    }
+
+    fun updateListeningWave(wave: ListeningWaveView) {
+        if (PrivacyManager.canAiListen()) wave.start()
+        else wave.stop()
+    }
+}
