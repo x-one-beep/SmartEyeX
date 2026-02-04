@@ -1,38 +1,37 @@
 import java.util.Properties
 
 plugins {
-    id("com.android.application")
+    id("com.android.library")
     kotlin("android")
     kotlin("kapt")
 }
 
 val secretsProps = Properties().apply {
-    val f = rootProject.file("app/secrets.properties")
+    val f = rootProject.file("core/secrets.properties")
     if (f.exists()) {
         f.inputStream().use { load(it) }
     }
 }
 
 android {
-    namespace = "com.smarteyex.app"
+    namespace = "com.smarteyex.core"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.smarteyex.app"
         minSdk = 29
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
+        // Opsional: jika mau pakai API key di core
         buildConfigField(
             "String",
             "GROQ_API_KEY",
-            "\"${secretsProps["GROQ_API_KEY"] ?: ""}\""
+            "\"${secretsProps["GROQ_API_KEY"] ?: "DUMMY_API_KEY"}\""
         )
     }
 
     buildFeatures {
-        viewBinding = true
         buildConfig = true
     }
 
@@ -56,13 +55,22 @@ android {
 }
 
 val cameraxVersion = "1.3.2"
+val lifecycleVersion = "2.7.0"
+val roomVersion = "2.6.1"
+val coroutinesVersion = "1.7.3"
+val activityVersion = "1.9.0"
 
 dependencies {
-    implementation "androidx.lifecycle:lifecycle-service:2.6.2"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2"
-    // ...dependencies lain
-}
+    // Lifecycle / Service
+    implementation("androidx.lifecycle:lifecycle-service:$lifecycleVersion")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion")
+
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
+
+    // Activity KTX (untuk UI hooks jika core akses)
+    implementation("androidx.activity:activity-ktx:$activityVersion")
 
     // CameraX
     implementation("androidx.camera:camera-core:$cameraxVersion")
@@ -70,29 +78,27 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
     implementation("androidx.camera:camera-view:$cameraxVersion")
 
-    // Lifecycle + Coroutines
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("androidx.activity:activity-ktx:1.9.0")
+    // Room Database
+    implementation("androidx.room:room-runtime:$roomVersion")
+    implementation("androidx.room:room-ktx:$roomVersion")
+    kapt("androidx.room:room-compiler:$roomVersion")
 
-    // Room
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
-
-    // Preference & WorkManager
-    implementation("androidx.preference:preference-ktx:1.2.0")
+    // WorkManager & Preferences
     implementation("androidx.work:work-runtime-ktx:2.8.1")
+    implementation("androidx.preference:preference-ktx:1.2.0")
 
-    // Material + Lottie
+    // Material Design + Lottie
     implementation("com.google.android.material:material:1.11.0")
     implementation("com.airbnb.android:lottie:5.2.0")
 
-    // Core
+    // Core Android KTX
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
 
     // JSON & HTTP
     implementation("org.json:json:20230227")
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
+
+    // Kotlin Standard Library
+    implementation(kotlin("stdlib"))
 }
