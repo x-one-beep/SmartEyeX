@@ -1,5 +1,11 @@
 package com.smarteyex.core
 
+import android.content.Context
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.*
+import android.speech.tts.TextToSpeech
+
 object PublicSafetyLayer {
     fun monitorHealth() {}
     fun pauseAI(reason: String) {}
@@ -21,11 +27,6 @@ class PartnerIdamanEngine(
     fun maybePraiseUser() {}
     fun maybeRandomPraise() {}
 }
-
-import android.content.Context
-import androidx.lifecycle.LifecycleService
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.*
 
 /* =========================================================
    SmartEyeXIntegrator — dummy engine jadi nyata
