@@ -76,4 +76,3 @@ dependencies {
     // JSON & HTTP
     implementation("org.json:json:20230227")
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
-}
