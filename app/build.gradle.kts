@@ -20,16 +20,6 @@ android {
     defaultConfig {
         applicationId = "com.smarteyex.app"
         minSdk = 29
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
-
-        // API key dari secrets.properties
-        buildConfigField(
-            "String",
-            "GROQ_API_KEY",
-            "\"${secretsProps["GROQ_API_KEY"] ?: "DUMMY_API_KEY"}\""
-        )
     }
 
     buildFeatures {
@@ -47,35 +37,22 @@ android {
     }
 
     buildTypes {
-        debug {
-            isMinifyEnabled = false
-        }
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
+        debug { isMinifyEnabled = false }
+        release { isMinifyEnabled = false }
     }
 }
 
-val cameraxVersion = "1.3.2"
-
 dependencies {
-    // Core / AndroidX
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.11.0")
+    implementation(project(":core"))
 
-    // Lifecycle + Coroutines
-    implementation("androidx.lifecycle:lifecycle-service:2.6.2")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+    // AndroidX + Lifecycle
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.activity:activity-ktx:1.9.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     // CameraX
+    val cameraxVersion = "1.3.2"
     implementation("androidx.camera:camera-core:$cameraxVersion")
     implementation("androidx.camera:camera-camera2:$cameraxVersion")
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
@@ -90,13 +67,11 @@ dependencies {
     implementation("androidx.preference:preference-ktx:1.2.0")
     implementation("androidx.work:work-runtime-ktx:2.8.1")
 
+    // Material + Lottie
+    implementation("com.google.android.material:material:1.11.0")
+    implementation("com.airbnb.android:lottie:5.2.0")
+
     // JSON & HTTP
     implementation("org.json:json:20230227")
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
-
-    // Lottie
-    implementation("com.airbnb.android:lottie:5.2.0")
-
-    // Modules internal
-    implementation(project(":core"))
 }
