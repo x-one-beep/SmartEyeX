@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import kotlinx.coroutines.*
 import java.util.*
+import android.speech.tts.TextToSpeech
 
 /* --------------------------------------------
 AppState — status global aplikasi
