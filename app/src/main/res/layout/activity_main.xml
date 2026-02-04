@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/gradient_hud_background"  <!-- Gradien futuristik -->
+    tools:context=".MainActivity">
+
+    <!-- Glassmorphism Overlay -->
+    <View
+        android:id="@+id/glass_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/glassmorphism_bg"  <!-- Drawable dengan blur dan transparansi -->
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- HUD Clock -->
+    <TextView
+        android:id="@+id/clock_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00:00"
+        android:textColor="#00FF88"
+        android:textSize="24sp"
+        android:fontFamily="monospace"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_margin="16dp" />
+
+    <!-- Camera HUD Fragment Container -->
+    <FrameLayout
+        android:id="@+id/camera_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/ai_panel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/clock_text" />
+
+    <!-- AI Chat Panel -->
+    <LinearLayout
+        android:id="@+id/ai_panel"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:background="@drawable/glass_panel"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@id/wa_panel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <TextView
+            android:id="@+id/ai_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="AI Chat Panel"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp" />
+
+        <EditText
+            android:id="@+id/ai_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Chat with AI..."
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:id="@+id/ai_send"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Send" />
+    </LinearLayout>
+
+    <!-- WA Notification Panel -->
+    <LinearLayout
+        android:id="@+id/wa_panel"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:background="@drawable/glass_panel"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <TextView
+            android:id="@+id/wa_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="WA Notifications"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/wa_notifications"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No new notifications"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

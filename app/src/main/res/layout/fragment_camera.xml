@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/cameraPreview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- HUD OVERLAY (NANTI AI / INFO OBJEK) -->
+    <TextView
+        android:id="@+id/txtCameraHUD"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SMART EYE ACTIVE"
+        android:textColor="#00E5FF"
+        android:textSize="14sp"
+        android:layout_gravity="top|center_horizontal"
+        android:padding="12dp" />
+
+</FrameLayout>

@@ -1,0 +1,10 @@
+<resources>
+ <string name="app_name">SmartEyeX</string>
+ <string name="permission_camera_rationale">Aplikasi butuh akses kamera untuk observasi.</string>
+ <string name="permission_audio_rationale">Aplikasi butuh akses mikrofon untuk audio response (opsional).</string>
+ <string name="btn_observe">Observe</string>
+ <string name="btn_memory">Memory</string>
+ <string name="settings_title">Settings</string>
+ <string name="manual_time_label">Use Manual Time</string>
+ <string name="set_manual_time">Set Manual Time</string>
+</resources>
