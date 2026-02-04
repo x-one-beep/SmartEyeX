@@ -1,5 +1,27 @@
 package com.smarteyex.core
 
+object PublicSafetyLayer {
+    fun monitorHealth() {}
+    fun pauseAI(reason: String) {}
+    fun resumeAI() {}
+    fun isPaused() = false
+}
+
+object UserBoundaryManager {
+    enum class UserState { BUSY, AVAILABLE }
+    var currentState: UserState = UserState.AVAILABLE
+    fun observe() {}
+}
+
+class PartnerIdamanEngine(
+    private val appState: AppState,
+    private val voiceService: VoiceService,
+    private val memoryManager: MemoryEngine
+) {
+    fun maybePraiseUser() {}
+    fun maybeRandomPraise() {}
+}
+
 import android.content.Context
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
