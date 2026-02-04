@@ -5,6 +5,7 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.*
 import android.speech.tts.TextToSpeech
+import androidx.lifecycle.LifecycleService
 
 object PublicSafetyLayer {
     fun monitorHealth() {}
