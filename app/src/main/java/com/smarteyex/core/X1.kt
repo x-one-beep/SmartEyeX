@@ -1,23 +1,70 @@
 package com.smarteyex.fullcore
 
-import android.Manifest import android.app.Notification import android.app.RemoteInput 
-import android.content.Context import android.content.Intent import android.content.pm.PackageManager import android.graphics.Bitmap import android.hardware.Sensor import android.hardware.SensorEvent import android.hardware.SensorEventListener import android.hardware.SensorManager import android.media.AudioFormat import android.media.AudioRecord import android.media.MediaRecorder import android.os.Bundle import android.os.Handler import android.os.Looper
- import android.speech.RecognitionListener import android.speech.RecognizerIntent 
+import android.Manifest 
+import android.app.Notification 
+import android.app.RemoteInput 
+import android.content.Context 
+import android.content.Intent 
+import android.content.pm.PackageManager 
+import android.graphics.Bitmap 
+import android.hardware.Sensor 
+import android.hardware.SensorEvent 
+import android.hardware.SensorEventListener 
+import android.hardware.SensorManager 
+import android.media.AudioFormat 
+import android.media.AudioRecord 
+import android.media.MediaRecorder 
+import android.os.Bundle 
+import android.os.Handler 
+import android.os.Looper
+import android.speech.RecognitionListener 
+import android.speech.RecognizerIntent 
 import android.speech.SpeechRecognizer 
 import android.speech.tts.TextToSpeech 
-import android.service.notification.NotificationListenerService import android.service.notification.StatusBarNotification import android.accessibilityservice.AccessibilityService import android.view.accessibility.AccessibilityEvent import android.view.accessibility.AccessibilityNodeInfo import androidx.core.content.ContextCompat import androidx.lifecycle.LifecycleOwner import androidx.room.* import androidx.camera.core.CameraSelector import androidx.camera.core.ImageAnalysis import androidx.camera.core.ImageProxy import androidx.camera.lifecycle.ProcessCameraProvider import com.google.mlkit.vision.common.InputImage import com.google.mlkit.vision.face.Face import com.google.mlkit.vision.face.FaceDetection import com.google.mlkit.vision.face.FaceDetectorOptions import kotlinx.coroutines.* import java.util.* import java.util.concurrent.atomic.AtomicBoolean import kotlin.math.log10 import kotlin.math.sqrt
+import android.service.notification.NotificationListenerService import android.service.notification.StatusBarNotification import android.accessibilityservice.AccessibilityService import android.view.accessibility.AccessibilityEvent 
+import android.view.accessibility.AccessibilityNodeInfo import androidx.core.content.ContextCompat 
+import androidx.lifecycle.LifecycleOwner 
+import androidx.room.* 
+import androidx.camera.core.CameraSelector 
+import androidx.camera.core.ImageAnalysis 
+import androidx.camera.core.ImageProxy 
+import androidx.camera.lifecycle.ProcessCameraProvider import com.google.mlkit.vision.common.InputImage 
+import com.google.mlkit.vision.face.Face 
+import com.google.mlkit.vision.face.FaceDetection 
+import com.google.mlkit.vision.face.FaceDetectorOptions import kotlinx.coroutines.* import java.util.* 
+import java.util.concurrent.atomic.AtomicBoolean 
+import kotlin.math.log10 import kotlin.math.sqrt
 
 /* ======================================== APP CONTEXT HOLDER ======================================== */ object AppContextHolder { lateinit var context: Context }
 
-/* ======================================== APP STATE & ENUMS ======================================== */ object AppState { var isListening = AtomicBoolean(false) var awaitingWaReply = false var lastWaNotification: StatusBarNotification? = null var lastSpokenText: String = "" var currentSpeakerCount: Int = 1 var currentSpeechSpeed: Float = 1.0f var currentEmotionLevel: Int = 5 var keywordDetected: Boolean = false var userMentionedAI: Boolean = false
-
+/* ======================================== APP STATE & ENUMS ======================================== */ object AppState { 
+var isListening = AtomicBoolean(false)
+var awaitingWaReply = false
+var lastWaNotification: StatusBarNotification? = null
+var lastSpokenText: String = ""
+var currentSpeakerCount: Int = 1
+var currentSpeechSpeed: Float = 1.0f
+var currentEmotionLevel: Int = 5
+var keywordDetected: Boolean = false
+var userMentionedAI: Boolean = false
 enum class Emotion { SAD, HAPPY, TIRED, ANGRY, EMPTY, CALM, CARING }
 
 }
 
 /* ======================================== MEMORY ENGINE ======================================== */ enum class MemoryType { CORE_IDENTITY, EMOTIONAL, SOCIAL, TEMPORAL }
 
-@Entity(tableName = "memory_store") data class MemoryEntity( @PrimaryKey val id: String = UUID.randomUUID().toString(), val type: MemoryType, val summary: String, val emotion: String?, val relatedPerson: String?, val timestamp: Long, val importance: Int )
+@Entity(tableName = "memory_store") 
+
+data class MemoryEntity( 
+@PrimaryKey 
+val id: String = UUID.randomUUID().toString(), 
+val type: MemoryType, 
+val summary: String, 
+val emotion: String?, 
+val relatedPerson: String?, 
+val timestamp: Long, 
+val importance: Int 
+)
 
 @Dao interface MemoryDao { @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insert(memory: MemoryEntity)
 
@@ -35,7 +82,29 @@ suspend fun wipeAll()
 
 }
 
-@Database(entities = [MemoryEntity::class], version = 1) abstract class MemoryDatabase : RoomDatabase() { abstract fun memoryDao(): MemoryDao companion object { @Volatile private var INSTANCE: MemoryDatabase? = null fun get(context: Context): MemoryDatabase { return INSTANCE ?: synchronized(this) { INSTANCE ?: Room.databaseBuilder( context.applicationContext, MemoryDatabase::class.java, "smart_memory.db" ).fallbackToDestructiveMigration().build().also { INSTANCE = it } } } } }
+@Database(entities = [MemoryEntity::class], version = 1)
+
+abstract class MemoryDatabase : RoomDatabase() {
+   
+    abstract fun memoryDao(): MemoryDao
+
+    companion object {
+        @Volatile
+        private var INSTANCE: MemoryDatabase? = null
+
+        fun get(context: Context): MemoryDatabase {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: Room.databaseBuilder(
+                    context.applicationContext,
+                    MemoryDatabase::class.java,
+                    "smart_memory.db"
+                ).fallbackToDestructiveMigration()
+                 .build()
+                 .also { INSTANCE = it }
+            }
+        }
+    }
+} 
 
 class SmartMemoryEngine(context: Context) { private val dao = MemoryDatabase.get(context).memoryDao() private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -61,13 +130,48 @@ fun wipeMemory() { scope.launch { try { dao.wipeAll() } catch(e:Exception){e.pri
 
 }
 
-data class ShortMemory(val topic: String, val intent: String, val emotion: String, val timestamp: Long) object ShortMemoryStore { private val memories = mutableListOf<ShortMemory>() fun add(topic: String, intent: String, emotion: String) { memories.add(ShortMemory(topic,intent,emotion,System.currentTimeMillis())) if(memories.size>10) memories.removeAt(0) } fun recent(): List<ShortMemory> = memories.toList() }
+data class ShortMemory(
+    val topic: String,
+    val intent: String,
+    val emotion: String,
+    val timestamp: Long
+)
+
+object ShortMemoryStore {
+    private val memories = mutableListOf<ShortMemory>()
+
+    fun add(topic: String, intent: String, emotion: String) {
+        memories.add(
+            ShortMemory(topic, intent, emotion, System.currentTimeMillis())
+        )
+        if (memories.size > 10) memories.removeAt(0)
+    }
+
+    fun recent(): List<ShortMemory> = memories.toList()
+}
 
 /* ======================================== VOICE ENGINE ======================================== */ enum class VoiceEmotion { CALM, HAPPY, SAD, TIRED, ANGRY, CARING, SERIOUS } enum class SpeechIntent { RESPOND, INFORM, INSTRUCT }
 
 object SpeechOutput { private lateinit var tts: TextToSpeech private var isReady = false fun init(ctx: Context) { tts = TextToSpeech(ctx) { tts.language = Locale("id","ID") tts.setSpeechRate(0.9f) isReady = true } } fun speak(text: String) { if(!isReady) return tts.speak(text, TextToSpeech.QUEUE_ADD, null, "smarteyex_voice") } }
 
-class VoiceProsodyEngine { fun build(emotion: VoiceEmotion, intent: SpeechIntent): ProsodyProfile = when(emotion){ VoiceEmotion.SAD -> ProsodyProfile(0.85f,0.8f,600,1.0f) VoiceEmotion.HAPPY -> ProsodyProfile(1.1f,1.05f,250,0.8f) VoiceEmotion.TIRED -> ProsodyProfile(0.9f,0.75f,700,0.9f) VoiceEmotion.ANGRY -> ProsodyProfile(1.0f,1.15f,200,0.2f) else -> ProsodyProfile(1.0f,1.0f,350,0.6f) } } data class ProsodyProfile(val pitch: Float, val speed: Float, val pauseMs: Int, val warmth: Float)
+class VoiceProsodyEngine { 
+fun build(
+    emotion: VoiceEmotion,
+    intent: SpeechIntent
+): ProsodyProfile =
+    when (emotion) {
+        VoiceEmotion.SAD -> ProsodyProfile(0.85f, 0.8f, 600, 1.0f)
+        VoiceEmotion.HAPPY -> ProsodyProfile(1.1f, 1.05f, 250, 0.8f)
+        VoiceEmotion.TIRED -> ProsodyProfile(0.9f, 0.75f, 700, 0.9f)
+        VoiceEmotion.ANGRY -> ProsodyProfile(1.0f, 1.15f, 200, 0.2f)
+        else -> ProsodyProfile(1.0f, 1.0f, 350, 0.6f)
+    }
+ 
+data class ProsodyProfile(
+val pitch: Float,
+val speed: Float, 
+val pauseMs: Int, 
+val warmth: Float)
 
 class VoiceInputController(private val context: Context) { private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main) private var recognizer: SpeechRecognizer? = null
 
