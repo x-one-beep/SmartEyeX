@@ -1,9 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Warna custom kamu -->
     <color name="dark_bg">#0D0D0D</color>
     <color name="dark_panel">#1A1A1A</color>
     <color name="accent_green">#00FFAA</color>
     <color name="text_white">#FFFFFF</color>
     <color name="text_hint">#888888</color>
     <color name="overlay_text">#00FFAA</color>
+
+    <!-- Warna yang wajib untuk MaterialComponents -->
+    <color name="colorPrimary">#00FFAA</color> <!-- bisa pakai accent_green -->
+    <color name="colorPrimaryVariant">#00CC88</color> <!-- varian gelap dari accent_green -->
+    <color name="colorOnPrimary">#0D0D0D</color> <!-- text di atas primary -->
+    
+    <color name="colorSecondary">#FFFFFF</color> <!-- secondary optional -->
+    <color name="colorSecondaryVariant">#DDDDDD</color>
+    <color name="colorOnSecondary">#0D0D0D</color>
+
+    <color name="colorBackground">#0D0D0D</color>
+    <color name="colorSurface">#1A1A1A</color>
+    <color name="colorError">#FF4444</color>
+    <color name="colorOnError">#FFFFFF</color>
+    <color name="colorOnBackground">#FFFFFF</color>
+    <color name="colorOnSurface">#FFFFFF</color>
 </resources>
