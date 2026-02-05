@@ -1,227 +1,103 @@
 package com.smarteyex.fullcore
 
-import android.Manifest
-import android.app.Notification
-import android.app.RemoteInput
-import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
-import android.media.AudioFormat
-import android.media.AudioRecord
-import android.media.MediaRecorder
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
-import android.speech.tts.TextToSpeech
-import android.service.notification.NotificationListenerService
-import android.service.notification.StatusBarNotification
-import android.accessibilityservice.AccessibilityService
-import android.view.accessibility.AccessibilityEvent
-import android.view.accessibility.AccessibilityNodeInfo
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleOwner
-import androidx.room.*
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageProxy
-import androidx.camera.lifecycle.ProcessCameraProvider
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.face.Face
-import com.google.mlkit.vision.face.FaceDetection
-import com.google.mlkit.vision.face.FaceDetectorOptions
-import kotlinx.coroutines.*
-import java.util.*
-import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.math.log10
-import kotlin.math.sqrt
-import kotlin.math.max
-import kotlin.math.min
+import android.Manifest import android.app.Notification import android.app.RemoteInput import android.content.Context import android.content.Intent import android.content.pm.PackageManager import android.graphics.Bitmap import android.hardware.Sensor import android.hardware.SensorEvent import android.hardware.SensorEventListener import android.hardware.SensorManager import android.media.AudioFormat import android.media.AudioRecord import android.media.MediaRecorder import android.os.Bundle import android.os.Handler import android.os.Looper import android.speech.RecognitionListener import android.speech.RecognizerIntent import android.speech.SpeechRecognizer import android.speech.tts.TextToSpeech import android.service.notification.NotificationListenerService import android.service.notification.StatusBarNotification import android.accessibilityservice.AccessibilityService import android.view.accessibility.AccessibilityEvent import android.view.accessibility.AccessibilityNodeInfo import androidx.core.content.ContextCompat import androidx.lifecycle.LifecycleOwner import androidx.room.* import androidx.camera.core.CameraSelector import androidx.camera.core.ImageAnalysis import androidx.camera.core.ImageProxy import androidx.camera.lifecycle.ProcessCameraProvider import com.google.mlkit.vision.common.InputImage import com.google.mlkit.vision.face.Face import com.google.mlkit.vision.face.FaceDetection import com.google.mlkit.vision.face.FaceDetectorOptions import kotlinx.coroutines.* import java.util.* import java.util.concurrent.atomic.AtomicBoolean import kotlin.math.log10 import kotlin.math.sqrt
 
-/* ========================================
-APP CONTEXT HOLDER
-======================================== */
-object AppContextHolder {
-    lateinit var context: Context
+/* ======================================== APP CONTEXT HOLDER ======================================== */ object AppContextHolder { lateinit var context: Context }
+
+/* ======================================== APP STATE & ENUMS ======================================== */ object AppState { var isListening = AtomicBoolean(false) var awaitingWaReply = false var lastWaNotification: StatusBarNotification? = null var lastSpokenText: String = "" var currentSpeakerCount: Int = 1 var currentSpeechSpeed: Float = 1.0f var currentEmotionLevel: Int = 5 var keywordDetected: Boolean = false var userMentionedAI: Boolean = false
+
+enum class Emotion { SAD, HAPPY, TIRED, ANGRY, EMPTY, CALM, CARING }
+
 }
 
-/* ========================================
-APP STATE & ENUMS
-======================================== */
-object AppState {
-    var isListening = AtomicBoolean(false)
-    var awaitingWaReply = false
-    var lastWaNotification: StatusBarNotification? = null
-    var lastSpokenText: String = ""
-    var currentSpeakerCount: Int = 1
-    var currentSpeechSpeed: Float = 1.0f
-    var currentEmotionLevel: Int = 5
-    var keywordDetected: Boolean = false
-    var userMentionedAI: Boolean = false
+/* ======================================== MEMORY ENGINE ======================================== */ enum class MemoryType { CORE_IDENTITY, EMOTIONAL, SOCIAL, TEMPORAL }
 
-    enum class Emotion { SAD, HAPPY, TIRED, ANGRY, EMPTY, CALM, CARING }
+@Entity(tableName = "memory_store") data class MemoryEntity( @PrimaryKey val id: String = UUID.randomUUID().toString(), val type: MemoryType, val summary: String, val emotion: String?, val relatedPerson: String?, val timestamp: Long, val importance: Int )
+
+@Dao interface MemoryDao { @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insert(memory: MemoryEntity)
+
+@Query("SELECT * FROM memory_store WHERE importance >= :minImportance ORDER BY timestamp DESC")
+suspend fun getImportantMemories(minImportance: Int = 5): List<MemoryEntity>
+
+@Query("SELECT * FROM memory_store WHERE relatedPerson = :name")
+suspend fun getMemoriesByPerson(name: String): List<MemoryEntity>
+
+@Query("DELETE FROM memory_store WHERE importance <= :threshold")
+suspend fun forgetLowImportance(threshold: Int = 2)
+
+@Query("DELETE FROM memory_store")
+suspend fun wipeAll()
+
 }
 
-/* ========================================
-MEMORY ENGINE – Production Ready
-======================================== */
-enum class MemoryType { CORE_IDENTITY, EMOTIONAL, SOCIAL, TEMPORAL }
+@Database(entities = [MemoryEntity::class], version = 1) abstract class MemoryDatabase : RoomDatabase() { abstract fun memoryDao(): MemoryDao companion object { @Volatile private var INSTANCE: MemoryDatabase? = null fun get(context: Context): MemoryDatabase { return INSTANCE ?: synchronized(this) { INSTANCE ?: Room.databaseBuilder( context.applicationContext, MemoryDatabase::class.java, "smart_memory.db" ).fallbackToDestructiveMigration().build().also { INSTANCE = it } } } } }
 
-@Entity(tableName = "memory_store")
-data class MemoryEntity(
-    @PrimaryKey val id: String = UUID.randomUUID().toString(),
-    val type: MemoryType,
-    val summary: String,
-    val emotion: String?,
-    val relatedPerson: String?,
-    val timestamp: Long,
-    val importance: Int
-)
+class SmartMemoryEngine(context: Context) { private val dao = MemoryDatabase.get(context).memoryDao() private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-@Dao
-interface MemoryDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(memory: MemoryEntity)
-
-    @Query("SELECT * FROM memory_store WHERE importance >= :minImportance ORDER BY timestamp DESC")
-    suspend fun getImportantMemories(minImportance: Int = 5): List<MemoryEntity>
-
-    @Query("SELECT * FROM memory_store WHERE relatedPerson = :name")
-    suspend fun getMemoriesByPerson(name: String): List<MemoryEntity>
-
-    @Query("DELETE FROM memory_store WHERE importance <= :threshold")
-    suspend fun forgetLowImportance(threshold: Int = 2)
-
-    @Query("DELETE FROM memory_store")
-    suspend fun wipeAll()
+fun remember(type: MemoryType, summary: String, emotion: String? = null,
+             relatedPerson: String? = null, importance: Int = 5) {
+    scope.launch {
+        try { 
+            dao.insert(MemoryEntity(type=type, summary=summary, emotion=emotion, relatedPerson=relatedPerson, timestamp=System.currentTimeMillis(), importance=importance)) 
+        } catch (e: Exception) { e.printStackTrace() }
+    }
 }
 
-@Database(entities = [MemoryEntity::class], version = 1)
-abstract class MemoryDatabase : RoomDatabase() {
-    abstract fun memoryDao(): MemoryDao
-    companion object {
-        @Volatile private var INSTANCE: MemoryDatabase? = null
-        fun get(context: Context): MemoryDatabase {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: Room.databaseBuilder(
-                    context.applicationContext,
-                    MemoryDatabase::class.java,
-                    "smart_memory.db"
-                ).fallbackToDestructiveMigration().build().also { INSTANCE = it }
-            }
+suspend fun getEmotionalContext(): String? = try {
+    dao.getImportantMemories().firstOrNull { it.type == MemoryType.EMOTIONAL }?.summary
+} catch(e: Exception) { e.printStackTrace(); null }
+
+suspend fun getPersonContext(name: String): String? = try {
+    dao.getMemoriesByPerson(name).maxByOrNull { it.importance }?.summary
+} catch(e: Exception) { e.printStackTrace(); null }
+
+fun decayMemory() { scope.launch { try { dao.forgetLowImportance() } catch(e:Exception){e.printStackTrace()} } }
+fun wipeMemory() { scope.launch { try { dao.wipeAll() } catch(e:Exception){e.printStackTrace()} } }
+
+}
+
+data class ShortMemory(val topic: String, val intent: String, val emotion: String, val timestamp: Long) object ShortMemoryStore { private val memories = mutableListOf<ShortMemory>() fun add(topic: String, intent: String, emotion: String) { memories.add(ShortMemory(topic,intent,emotion,System.currentTimeMillis())) if(memories.size>10) memories.removeAt(0) } fun recent(): List<ShortMemory> = memories.toList() }
+
+/* ======================================== VOICE ENGINE ======================================== */ enum class VoiceEmotion { CALM, HAPPY, SAD, TIRED, ANGRY, CARING, SERIOUS } enum class SpeechIntent { RESPOND, INFORM, INSTRUCT }
+
+object SpeechOutput { private lateinit var tts: TextToSpeech private var isReady = false fun init(ctx: Context) { tts = TextToSpeech(ctx) { tts.language = Locale("id","ID") tts.setSpeechRate(0.9f) isReady = true } } fun speak(text: String) { if(!isReady) return tts.speak(text, TextToSpeech.QUEUE_ADD, null, "smarteyex_voice") } }
+
+class VoiceProsodyEngine { fun build(emotion: VoiceEmotion, intent: SpeechIntent): ProsodyProfile = when(emotion){ VoiceEmotion.SAD -> ProsodyProfile(0.85f,0.8f,600,1.0f) VoiceEmotion.HAPPY -> ProsodyProfile(1.1f,1.05f,250,0.8f) VoiceEmotion.TIRED -> ProsodyProfile(0.9f,0.75f,700,0.9f) VoiceEmotion.ANGRY -> ProsodyProfile(1.0f,1.15f,200,0.2f) else -> ProsodyProfile(1.0f,1.0f,350,0.6f) } } data class ProsodyProfile(val pitch: Float, val speed: Float, val pauseMs: Int, val warmth: Float)
+
+class VoiceInputController(private val context: Context) { private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main) private var recognizer: SpeechRecognizer? = null
+
+fun startListening(onResult: (String)->Unit) {
+    if(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) return
+    if(recognizer==null) recognizer = SpeechRecognizer.createSpeechRecognizer(context)
+    recognizer?.setRecognitionListener(object : RecognitionListener {
+        override fun onResults(results: Bundle) {
+            val text = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull() ?: return
+            scope.launch { onResult(text) }
         }
+        override fun onError(error: Int) {}
+        override fun onReadyForSpeech(params: Bundle?) {}
+        override fun onBeginningOfSpeech() {}
+        override fun onRmsChanged(rmsdB: Float) {}
+        override fun onBufferReceived(buffer: ByteArray?) {}
+        override fun onEndOfSpeech() {}
+        override fun onPartialResults(partialResults: Bundle?) {}
+        override fun onEvent(eventType: Int, params: Bundle?) {}
+    })
+    val intent = RecognizerIntent().apply {
+        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true)
     }
+    recognizer?.startListening(intent)
+    AppState.isListening.set(true)
 }
 
-class SmartMemoryEngine(context: Context) {
-    private val dao = MemoryDatabase.get(context).memoryDao()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-    fun remember(type: MemoryType, summary: String, emotion: String? = null,
-                 relatedPerson: String? = null, importance: Int = 5) {
-        scope.launch {
-            try { dao.insert(MemoryEntity(type=type, summary=summary, emotion=emotion, relatedPerson=relatedPerson, timestamp=System.currentTimeMillis(), importance=importance)) }
-            catch (e: Exception) { e.printStackTrace() }
-        }
-    }
-
-    suspend fun getEmotionalContext(): String? = try {
-        dao.getImportantMemories().firstOrNull { it.type == MemoryType.EMOTIONAL }?.summary
-    } catch(e: Exception) { e.printStackTrace(); null }
-
-    suspend fun getPersonContext(name: String): String? = try {
-        dao.getMemoriesByPerson(name).maxByOrNull { it.importance }?.summary
-    } catch(e: Exception) { e.printStackTrace(); null }
-
-    fun decayMemory() { scope.launch { try { dao.forgetLowImportance() } catch(e:Exception){e.printStackTrace()} } }
-    fun wipeMemory() { scope.launch { try { dao.wipeAll() } catch(e:Exception){e.printStackTrace()} } }
+fun stopListening() {
+    recognizer?.stopListening()
+    recognizer?.destroy() // RELEASE resource
+    AppState.isListening.set(false)
 }
 
-data class ShortMemory(val topic: String, val intent: String, val emotion: String, val timestamp: Long)
-object ShortMemoryStore {
-    private val memories = mutableListOf<ShortMemory>()
-    fun add(topic: String, intent: String, emotion: String) {
-        memories.add(ShortMemory(topic,intent,emotion,System.currentTimeMillis()))
-        if(memories.size>10) memories.removeAt(0)
-    }
-    fun recent(): List<ShortMemory> = memories.toList()
 }
-
-/* ========================================
-VOICE ENGINE – Production Ready
-======================================== */
-enum class VoiceEmotion { CALM, HAPPY, SAD, TIRED, ANGRY, CARING, SERIOUS }
-enum class SpeechIntent { RESPOND, INFORM, INSTRUCT }
-
-object SpeechOutput {
-    private lateinit var tts: TextToSpeech
-    private var isReady = false
-    fun init(ctx: Context) {
-        tts = TextToSpeech(ctx) {
-            tts.language = Locale("id","ID")
-            tts.setSpeechRate(0.9f)
-            isReady = true
-        }
-    }
-    fun speak(text: String) {
-        if(!isReady) return
-        tts.speak(text, TextToSpeech.QUEUE_ADD, null, "smarteyex_voice")
-    }
-}
-
-class VoiceProsodyEngine {
-    fun build(emotion: VoiceEmotion, intent: SpeechIntent): ProsodyProfile = when(emotion){
-        VoiceEmotion.SAD -> ProsodyProfile(0.85f,0.8f,600,1.0f)
-        VoiceEmotion.HAPPY -> ProsodyProfile(1.1f,1.05f,250,0.8f)
-        VoiceEmotion.TIRED -> ProsodyProfile(0.9f,0.75f,700,0.9f)
-        VoiceEmotion.ANGRY -> ProsodyProfile(1.0f,1.15f,200,0.2f)
-        else -> ProsodyProfile(1.0f,1.0f,350,0.6f)
-    }
-}
-data class ProsodyProfile(val pitch: Float, val speed: Float, val pauseMs: Int, val warmth: Float)
-
-class VoiceInputController(private val context: Context) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private var recognizer: SpeechRecognizer? = null
-
-    fun startListening(onResult: (String)->Unit) {
-        if(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) return
-        if(recognizer==null) recognizer = SpeechRecognizer.createSpeechRecognizer(context)
-        recognizer?.setRecognitionListener(object : RecognitionListener {
-            override fun onResults(results: Bundle) {
-                val text = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull() ?: return
-                scope.launch { onResult(text) }
-            }
-            override fun onError(error: Int) {}
-            override fun onReadyForSpeech(params: Bundle?) {}
-            override fun onBeginningOfSpeech() {}
-            override fun onRmsChanged(rmsdB: Float) {}
-            override fun onBufferReceived(buffer: ByteArray?) {}
-            override fun onEndOfSpeech() {}
-            override fun onPartialResults(partialResults: Bundle?) {}
-            override fun onEvent(eventType: Int, params: Bundle?) {}
-        })
-        val intent = RecognizerIntent().apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,true)
-        }
-        recognizer?.startListening(intent)
-        AppState.isListening.set(true)
-    }
-
-    fun stopListening() {
-        recognizer?.stopListening()
-        AppState.isListening.set(false)
-    }
-}
-
 /* ========================================
 CAMERA & FACE EMOTION ENGINE
 ======================================== */
@@ -382,31 +258,100 @@ object SensorBrainIntegrator {
         AmbientNoiseSensor.stopSampling()
     }
 }
-package com.smarteyex.fullcore
-
-import android.graphics.Bitmap
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import androidx.lifecycle.LifecycleOwner
-import com.google.mlkit.vision.face.Face
-import kotlinx.coroutines.*
-import android.service.notification.StatusBarNotification
-import android.app.Notification
-import android.app.RemoteInput
-import android.content.Intent
-import android.accessibilityservice.AccessibilityService
-import android.view.accessibility.AccessibilityNodeInfo
 
 /* ========================================
-API KEY – ambil dari secret GitHub via BuildConfig
+STUB PERSONA ENGINE (untuk compile)
 ======================================== */
-object ApiKeys {
-    val OPENAI_KEY: String = BuildConfig.API_KEY // pastikan di gradle: buildConfigField("String", "API_KEY", "\"${System.getenv("OPENAI_API_KEY")}\"")
+object PersonaEngine {
+    data class PersonaContext(val mask: String="default", val tone: String="calm", val pitch: Float=1f, val speed: Float=1f, val warmth: Float=0.6f)
+    fun analyzeContext(speakerCount: Int, speed: Float, emotionLevel: Int, keywordDetected: Boolean, userMentionedAI: Boolean) : PersonaContext {
+        return PersonaContext(
+            mask = "personaMask",
+            tone = if(emotionLevel>6) "happy" else "calm",
+            pitch = 1.0f,
+            speed = speed,
+            warmth = 0.7f
+        )
+    }
 }
 
 /* ========================================
-DASHBOARD & UI ENGINE – Futuristic Holographic
+STUB CURHAT ENGINE (untuk compile)
+======================================== */
+object CurhatEngine {
+    fun respond(emotion: AppState.Emotion): String {
+        return when(emotion){
+            AppState.Emotion.HAPPY -> "Senang mendengarnya!"
+            AppState.Emotion.SAD -> "Aku ngerti perasaanmu..."
+            AppState.Emotion.TIRED -> "Istirahat yang cukup ya."
+            else -> "Aku di sini buatmu."
+        }
+    }
+}
+/* ========================================
+WHATSAPP REPLY & NOTIFICATION ENGINE
+======================================== */
+object WhatsAppReplySender {
+    fun sendReply(sbn: StatusBarNotification, reply: String) {
+        val notification = sbn.notification
+        val actions = notification.actions ?: return
+        for (action in actions) {
+            val remoteInputs = action.remoteInputs ?: continue
+            val intent = Intent()
+            val bundle = Bundle()
+            for (input in remoteInputs) {
+                bundle.putCharSequence(input.resultKey, reply)
+            }
+            RemoteInput.addResultsToIntent(remoteInputs, intent, bundle)
+            try { action.actionIntent.send(null, 0, intent) } catch (e: Exception) { e.printStackTrace() }
+        }
+    }
+}
+
+object WaReplyEngine {
+    fun reply(sbn: StatusBarNotification, reply: String){
+        WhatsAppReplySender.sendReply(sbn, reply)
+    }
+}
+
+class WaNotificationService: NotificationListenerService() {
+    override fun onNotificationPosted(sbn: StatusBarNotification) {
+        if(!sbn.packageName.contains("whatsapp")) return
+        val extras = sbn.notification.extras
+        val sender = extras.getString(Notification.EXTRA_TITLE) ?: return
+        val message = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: return
+        AppState.lastWaNotification = sbn
+        SmartEyeXBrain.onWaMessageReceived(sender, message)
+    }
+}
+
+class WaReplyAccessibilityService: AccessibilityService() {
+    companion object {
+        var instance: WaReplyAccessibilityService? = null
+        fun sendReply(text: String){ instance?.replyToLatest(text) }
+    }
+
+    override fun onServiceConnected() { instance = this }
+
+    private fun replyToLatest(text: String){
+        val root = rootInActiveWindow ?: return
+        val replyButton = root.findAccessibilityNodeInfosByText("Reply").firstOrNull() ?: return
+        replyButton.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        Handler(Looper.getMainLooper()).postDelayed({
+            val input = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            val args = Bundle()
+            args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+            input?.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+            input?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        }, 300)
+    }
+
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
+    override fun onInterrupt() {}
+}
+
+/* ========================================
+SMART DASHBOARD & UI
 ======================================== */
 object SmartDashboard {
 
@@ -516,69 +461,7 @@ object SmartConversation {
 }
 
 /* ========================================
-WHATSAPP REPLY & NOTIFICATION ENGINE
-======================================== */
-object WhatsAppReplySender {
-    fun sendReply(sbn: StatusBarNotification, reply: String) {
-        val notification = sbn.notification
-        val actions = notification.actions ?: return
-        for(action in actions) {
-            val remoteInputs = action.remoteInputs ?: continue
-            val intent = Intent()
-            val bundle = Bundle()
-            for(input in remoteInputs) {
-                bundle.putCharSequence(input.resultKey, reply)
-            }
-            RemoteInput.addResultsToIntent(remoteInputs, intent, bundle)
-            try { action.actionIntent.send(null, 0, intent) } catch(e: Exception) { e.printStackTrace() }
-        }
-    }
-}
-
-object WaReplyEngine {
-    fun reply(sbn: StatusBarNotification, reply: String){
-        WhatsAppReplySender.sendReply(sbn, reply)
-    }
-}
-
-class WaNotificationService: NotificationListenerService() {
-    override fun onNotificationPosted(sbn: StatusBarNotification) {
-        if(!sbn.packageName.contains("whatsapp")) return
-        val extras = sbn.notification.extras
-        val sender = extras.getString(Notification.EXTRA_TITLE) ?: return
-        val message = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: return
-        AppState.lastWaNotification = sbn
-        SmartEyeXBrain.onWaMessageReceived(sender, message)
-    }
-}
-
-class WaReplyAccessibilityService: AccessibilityService() {
-    companion object {
-        var instance: WaReplyAccessibilityService? = null
-        fun sendReply(text: String){ instance?.replyToLatest(text) }
-    }
-
-    override fun onServiceConnected() { instance = this }
-
-    private fun replyToLatest(text: String){
-        val root = rootInActiveWindow ?: return
-        val replyButton = root.findAccessibilityNodeInfosByText("Reply").firstOrNull() ?: return
-        replyButton.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-        Handler(Looper.getMainLooper()).postDelayed({
-            val input = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
-            val args = Bundle()
-            args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
-            input?.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-            input?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-        }, 300)
-    }
-
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
-    override fun onInterrupt() {}
-}
-
-/* ========================================
-SMART BRAIN & CURHAT DEEP ENGINE
+SMART BRAIN & CURHAT ENGINE
 ======================================== */
 object SmartEyeXBrain {
     fun onWaMessageReceived(sender: String, message: String){
@@ -639,7 +522,6 @@ object SmartEyeXFullBrain {
     }
 
     private fun detectEmotionFromContext(spokenText: String): AppState.Emotion {
-        // Bisa diganti AI sentiment detection
         return when {
             spokenText.contains("senang", true) -> AppState.Emotion.HAPPY
             spokenText.contains("sedih", true) -> AppState.Emotion.SAD
