@@ -2,6 +2,9 @@ package com.smarteyex.memory
 
 import android.content.Context
 import androidx.room.*
+import com.smarteyex.core.AppState
+import com.smarteyex.core.voice.VoiceEngine
+import com.smarteyex.notification.WhatsAppReplySender
 import kotlinx.coroutines.*
 import java.util.UUID
 
@@ -13,11 +16,13 @@ enum class MemoryType {
     CORE_IDENTITY,
     EMOTIONAL,
     SOCIAL,
-    TEMPORAL
+    TEMPORAL,
+    WA_MESSAGE,
+    VOICE_REPLY
 }
 
 /* =========================
-   ENTITY
+   ENTITY DATABASE
 ========================= */
 
 @Entity(tableName = "memory_store")
@@ -78,15 +83,17 @@ abstract class MemoryDatabase : RoomDatabase() {
 }
 
 /* =========================
-   MEMORY ENGINE (OTAK)
+   MEMORY ENGINE (FINAL)
 ========================= */
 
-class SmartMemoryEngine(context: Context) {
+class SmartMemoryEngine(private val context: Context) {
 
     private val dao = MemoryDatabase.get(context).memoryDao()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    /* === SIMPAN MAKNA === */
+    /* =========================
+       SIMPAN MAKNA UTAMA
+    ========================== */
     fun remember(
         type: MemoryType,
         summary: String,
@@ -108,35 +115,103 @@ class SmartMemoryEngine(context: Context) {
         }
     }
 
-    /* === DIPANGGIL SAAT USER DIAM / CURHAT === */
+    /* =========================
+       INGAT EMOSI PENGGUNA
+    ========================== */
     suspend fun getEmotionalContext(): String? {
         val memories = dao.getImportantMemories()
         return memories.firstOrNull { it.type == MemoryType.EMOTIONAL }?.summary
     }
 
-    /* === KENAL ORANG === */
+    /* =========================
+       INGAT ORANG / KONTEKS SOSIAL
+    ========================== */
     suspend fun getPersonContext(name: String): String? {
         return dao.getMemoriesByPerson(name)
             .maxByOrNull { it.importance }
             ?.summary
     }
-memoryEngine.remember(
-    type = MemoryType.SOCIAL,
-    summary = "User ngobrol topik politik dengan temannya",
-    importance = 4
-)
 
-    /* === LUPA KAYAK MANUSIA === */
+    /* =========================
+       LUPA KAYAK MANUSIA
+    ========================== */
     fun decayMemory() {
         scope.launch {
             dao.forgetLowImportance()
         }
     }
 
-    /* === MODE DARURAT / RESET === */
+    /* =========================
+       RESET MEMORI
+    ========================== */
     fun wipeMemory() {
         scope.launch {
             dao.wipeAll()
+            ShortMemoryStore.clear()
         }
     }
+
+    /* =========================
+       WA MESSAGE → MEMORY + VOICE INTEGRATION
+    ========================== */
+    fun onWaMessageReceived(sender: String, message: String) {
+        remember(
+            type = MemoryType.WA_MESSAGE,
+            summary = message,
+            relatedPerson = sender,
+            importance = if (AppState.isPriorityContact(sender)) 10 else 5
+        )
+
+        if (!AppState.isBusy.get()) {
+            VoiceEngine.speak(
+                "Ada pesan dari $sender: ${message.take(80)}"
+            )
+        }
+    }
+
+    fun onUserVoiceReply(reply: String, targetSbn: android.service.notification.StatusBarNotification?) {
+        remember(
+            type = MemoryType.VOICE_REPLY,
+            summary = reply,
+            importance = 7
+        )
+
+        targetSbn?.let {
+            WhatsAppReplySender.sendReply(it, reply)
+        }
+    }
+
+    /* =========================
+       REAL-TIME SHORT MEMORY
+    ========================== */
+    fun addShortMemory(topic: String, intent: String, emotion: String) {
+        ShortMemoryStore.add(topic, intent, emotion)
+    }
+
+    fun recentShortMemories(): List<ShortMemory> = ShortMemoryStore.recent()
+}
+
+/* =========================
+   SHORT MEMORY
+========================= */
+
+data class ShortMemory(
+    val topic: String,
+    val intent: String,
+    val emotion: String,
+    val timestamp: Long
+)
+
+object ShortMemoryStore {
+    private val memories = mutableListOf<ShortMemory>()
+
+    fun add(topic: String, intent: String, emotion: String) {
+        memories.add(
+            ShortMemory(topic, intent, emotion, System.currentTimeMillis())
+        )
+        if (memories.size > 20) memories.removeAt(0) // real-time micro memory
+    }
+
+    fun recent(): List<ShortMemory> = memories
+    fun clear() = memories.clear()
 }
