@@ -464,3 +464,190 @@ object SmartEyeXBrain {
         AppState.awaitingWaReply = true
     }
 }
+
+/* ===============================
+SMART DASHBOARD & UI
+=============================== */
+
+object SmartDashboard {
+
+    private lateinit var context: Context
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    fun init(ctx: Context) {
+        context = ctx
+        setupHolographicUI()
+        startMemoryParticles()
+        bindNotifications()
+    }
+
+    private fun setupHolographicUI() {
+        println("Dashboard initialized: holographic shards moving, interactive buttons ready")
+    }
+
+    private fun startMemoryParticles() {
+        scope.launch {
+            while (true) {
+                val count = ShortMemoryStore.recent().size
+                println("Memory particles updated: $count shards")
+                delay(500)
+            }
+        }
+    }
+
+    private fun bindNotifications() {
+        println("Notification feed bound to dashboard")
+    }
+
+    fun displayAROverlay(bitmap: Bitmap, label: String, x: Float, y: Float) {
+        println("AR Overlay: $label at ($x,$y)")
+    }
+
+    fun scrollToFeature(featureName: String) {
+        println("Scrolling dashboard to feature: $featureName")
+    }
+
+    fun triggerUserFeedback(text: String) {
+        SpeechOutput.speak(text)
+        println("User feedback triggered: $text")
+    }
+}
+
+/* ===============================
+MULTI-MODAL INTERACTION ENGINE
+=============================== */
+
+object MultiModalEngine {
+
+    fun handleVoiceInput(text: String) {
+        scopeLaunch { SmartEyeXFullBrain.processVoiceInput(text) }
+    }
+
+    fun handleTextInput(text: String) {
+        println("Text input received: $text")
+        scopeLaunch { SmartEyeXFullBrain.processVoiceInput(text) }
+    }
+
+    fun handleGesture(action: String) {
+        println("Gesture detected: $action")
+    }
+
+    fun handleVisual(face: Face?, bitmap: Bitmap?) {
+        if (face != null) {
+            AppState.currentEmotionLevel = when {
+                face.smilingProbability ?: 0f > 0.7f -> 8
+                face.smilingProbability ?: 0f < 0.3f -> 3
+                else -> 5
+            }
+        }
+        if (bitmap != null) {
+            SmartDashboard.displayAROverlay(bitmap, "Detected Object", 100f, 200f)
+        }
+    }
+
+    private fun scopeLaunch(block: suspend () -> Unit) {
+        CoroutineScope(SupervisorJob() + Dispatchers.Main).launch {
+            block()
+        }
+    }
+}
+
+/* ===============================
+VOICE & CHAT FLOW
+=============================== */
+
+object SmartConversation {
+
+    fun userSpeaks(text: String) {
+        println("User says: $text")
+        MultiModalEngine.handleVoiceInput(text)
+    }
+
+    fun userTextInput(text: String) {
+        println("User text input: $text")
+        MultiModalEngine.handleTextInput(text)
+    }
+
+    fun aiInterjectRandom() {
+        val randomResponses = listOf(
+            "Eh, tau ga sih? Lagi trending nih!",
+            "Haha, lucu juga ya itu!",
+            "Hati-hati ya, jangan sampe salah langkah.",
+            "Aku inget lo cerita soal ini sebelumnya..."
+        )
+        SpeechOutput.speak(randomResponses.random())
+    }
+}
+
+/* ===============================
+CURHAT DEEP ENGINE
+=============================== */
+
+object CurhatDeepEngine {
+
+    suspend fun respondToUser(userEmotion: AppState.Emotion): String {
+        val memoryEngine = SmartMemoryEngine(AppContextHolder.context)
+        val emotionalContext = memoryEngine.getEmotionalContext()
+        val baseResponse = CurhatEngine.respond(userEmotion)
+
+        return if (!emotionalContext.isNullOrEmpty())
+            "$baseResponse Gue inget juga sebelumnya lo cerita soal: $emotionalContext"
+        else baseResponse
+    }
+}
+
+/* ===============================
+SMART FULL BRAIN – FINAL
+=============================== */
+
+object SmartEyeXFullBrain {
+
+    private val personaEngine = PersonaEngine
+    private val memoryEngine by lazy {
+        SmartMemoryEngine(AppContextHolder.context)
+    }
+
+    suspend fun processVoiceInput(spokenText: String) {
+        val userEmotion = detectEmotionFromContext(spokenText)
+
+        val personaCtx = personaEngine.analyzeContext(
+            AppState.currentSpeakerCount,
+            AppState.currentSpeechSpeed,
+            AppState.currentEmotionLevel,
+            AppState.keywordDetected,
+            AppState.userMentionedAI
+        )
+
+        val reply = CurhatDeepEngine.respondToUser(userEmotion)
+        SpeechOutput.speak("[${personaCtx.tone}] $reply")
+
+        if (AppState.awaitingWaReply && AppState.lastWaNotification != null) {
+            WaReplyEngine.reply(AppState.lastWaNotification!!, spokenText)
+            SpeechOutput.speak("Udah gue kirim ya.")
+            AppState.awaitingWaReply = false
+        }
+    }
+
+    fun rememberEvent(
+        summary: String,
+        emotion: String?,
+        relatedPerson: String?,
+        importance: Int
+    ) {
+        memoryEngine.remember(
+            MemoryType.EMOTIONAL,
+            summary,
+            emotion,
+            relatedPerson,
+            importance
+        )
+    }
+
+    private fun detectEmotionFromContext(text: String): AppState.Emotion =
+        when {
+            text.contains("senang", true) -> AppState.Emotion.HAPPY
+            text.contains("sedih", true) -> AppState.Emotion.SAD
+            text.contains("capek", true) -> AppState.Emotion.TIRED
+            else -> AppState.Emotion.CALM
+        }
+}
