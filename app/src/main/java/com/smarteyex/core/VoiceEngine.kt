@@ -27,6 +27,13 @@ object VoiceEngine {
         recognizer.startListening(intent)
         AppState.isListening.set(true)
     }
+if (AppState.awaitingWaReply) {
+    WaReplyEngine.reply(
+        AppState.lastWaNotification!!,
+        spokenText
+    )
+    SpeechOutput.speak("udah gue kirim ya.")
+}
 
     fun stop() {
         recognizer.stopListening()
