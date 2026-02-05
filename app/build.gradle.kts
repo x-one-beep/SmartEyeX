@@ -52,8 +52,7 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.android.material:material:1.9.0' // versi terbaru
-}
+    implementation("com.google.android.material:material:1.9.0")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
