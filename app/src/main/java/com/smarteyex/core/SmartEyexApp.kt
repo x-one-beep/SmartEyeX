@@ -1,34 +1,17 @@
 package com.smarteyex.core
 
 import android.app.Application
-import com.smarteyex.core.ai.GroqAiEngine
-import com.smarteyex.core.memory.MemoryManager
-import com.smarteyex.core.state.AppState
-import com.smarteyex.core.voice.VoiceEngine
-import com.smarteyex.core.voice.VoiceService
+import android.content.Intent
 
-class SmartEyeXApp : Application() {
-
-    lateinit var appState: AppState
-    lateinit var voiceEngine: VoiceEngine
-    lateinit var voiceService: VoiceService
-    lateinit var aiEngine: GroqAiEngine
-    lateinit var memoryManager: MemoryManager
+class SmartEyexApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
 
-        // Core state
-        appState = AppState()
+        AppState.init(this)
 
-        // Voice system
-        voiceEngine = VoiceEngine(appState)
-        voiceService = VoiceService(this, appState)
-
-        // Memory
-        memoryManager = MemoryManager()
-
-        // AI engine
-        aiEngine = GroqAiEngine(appState, memoryManager)
+        // Nyalakan CoreService sejak app hidup
+        val serviceIntent = Intent(this, CoreService::class.java)
+        startForegroundService(serviceIntent)
     }
 }
