@@ -1,9 +1,13 @@
 package com.smarteyex.core.voice
 
 import android.content.Context
-import android.speech.SpeechRecognizer
+import android.os.Bundle
+import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import com.smarteyex.core.AppState
+import com.smarteyex.notification.WaReplyEngine
+import com.smarteyex.memory.SmartMemoryEngine
 
 object VoiceEngine {
 
@@ -13,8 +17,46 @@ object VoiceEngine {
     fun start(ctx: Context) {
         context = ctx
         recognizer = SpeechRecognizer.createSpeechRecognizer(ctx)
+        recognizer.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {}
+            override fun onBeginningOfSpeech() {}
+            override fun onRmsChanged(rmsdB: Float) {}
+            override fun onBufferReceived(buffer: ByteArray?) {}
+            override fun onEndOfSpeech() {}
+            override fun onError(error: Int) {}
+            override fun onPartialResults(partialResults: Bundle?) {}
+            override fun onEvent(eventType: Int, params: Bundle?) {}
 
-        recognizer.setRecognitionListener(VoiceListener)
+            override fun onResults(results: Bundle) {
+                val spokenText = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    ?.firstOrNull() ?: return
+
+                AppState.lastSpokenText = spokenText
+
+                // === WA reply otomatis jika AI menunggu balasan ===
+                if (AppState.awaitingWaReply && AppState.lastWaNotification != null) {
+                    WaReplyEngine.reply(AppState.lastWaNotification!!, spokenText)
+                    SpeechOutput.speak("Udah gue kirim ya.")
+                    AppState.awaitingWaReply = false
+                }
+
+                // === Analisis konteks sosial & emosi user ===
+                val mode = socialEngine.evaluate(
+                    SocialSignal(
+                        speakerCount = AppState.currentSpeakerCount,
+                        avgSpeechSpeed = AppState.currentSpeechSpeed,
+                        emotionLevel = AppState.currentEmotionLevel,
+                        keywordTrigger = AppState.keywordDetected,
+                        userMentionedAI = AppState.userMentionedAI
+                    )
+                )
+
+                // AI bisa menyesuaikan nada & cara respon
+                val emotion = SmartMemoryEngine(context).getEmotionalContext()
+                VoiceOutput.speak(spokenText, emotion = emotion, persona = mode.persona)
+            }
+        })
+
         listen()
     }
 
@@ -27,43 +69,6 @@ object VoiceEngine {
         recognizer.startListening(intent)
         AppState.isListening.set(true)
     }
-if (AppState.awaitingWaReply) {
-    WaReplyEngine.reply(
-        AppState.lastWaNotification!!,
-        spokenText
-    )
-    SpeechOutput.speak("udah gue kirim ya.")
-}
-
-val mode = socialEngine.evaluate(
-    SocialSignal(
-        speakerCount = 4,
-        avgSpeechSpeed = 1.3f,
-        emotionLevel = 6,
-        keywordTrigger = true,
-        userMentionedAI = false
-    )
-)
-
-val mode = socialEngine.evaluate(
-    SocialSignal(
-        speakerCount = 2,
-        avgSpeechSpeed = 0.9f,
-        emotionLevel = 4,
-        keywordTrigger = true,
-        userMentionedAI = false
-    )
-)
-
-val mode = socialEngine.evaluate(
-    SocialSignal(
-        speakerCount = 1,
-        avgSpeechSpeed = 0.6f,
-        emotionLevel = 3,
-        keywordTrigger = false,
-        userMentionedAI = true
-    )
-)
 
     fun stop() {
         recognizer.stopListening()
