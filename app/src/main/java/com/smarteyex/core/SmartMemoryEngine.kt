@@ -120,6 +120,11 @@ class SmartMemoryEngine(context: Context) {
             .maxByOrNull { it.importance }
             ?.summary
     }
+memoryEngine.remember(
+    type = MemoryType.SOCIAL,
+    summary = "User ngobrol topik politik dengan temannya",
+    importance = 4
+)
 
     /* === LUPA KAYAK MANUSIA === */
     fun decayMemory() {
