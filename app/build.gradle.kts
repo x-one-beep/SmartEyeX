@@ -5,16 +5,17 @@ plugins {
 }
 
 android {
-    namespace = "com.smarteyex.fullcore"
+    namespace = "com.smarteyex.core"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.smarteyex.fullcore"
+        applicationId = "com.smarteyex.core"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
-        versionName = "1.9"
+        versionName = "1.0"
 
+        // Ambil API key dari GitHub Secret
         buildConfigField(
             "String",
             "API_KEY",
@@ -46,6 +47,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true   // ✅ HARUS INI biar BuildConfig.API_KEY jalan
     }
 }
 
@@ -73,10 +75,8 @@ dependencies {
 
     // AndroidX Core
     implementation("androidx.core:core-ktx:1.12.0")
-}
 
-// Optional: logging / debug utilities
-dependencies {
+    // Debug & Testing
     debugImplementation("androidx.fragment:fragment-testing:1.6.2")
     testImplementation("junit:junit:4.13.2")
 }
