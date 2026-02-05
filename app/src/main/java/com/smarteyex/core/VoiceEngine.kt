@@ -45,6 +45,26 @@ val mode = socialEngine.evaluate(
     )
 )
 
+val mode = socialEngine.evaluate(
+    SocialSignal(
+        speakerCount = 2,
+        avgSpeechSpeed = 0.9f,
+        emotionLevel = 4,
+        keywordTrigger = true,
+        userMentionedAI = false
+    )
+)
+
+val mode = socialEngine.evaluate(
+    SocialSignal(
+        speakerCount = 1,
+        avgSpeechSpeed = 0.6f,
+        emotionLevel = 3,
+        keywordTrigger = false,
+        userMentionedAI = true
+    )
+)
+
     fun stop() {
         recognizer.stopListening()
         AppState.isListening.set(false)
