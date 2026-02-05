@@ -19,14 +19,12 @@ import java.util.*
 import android.speech.tts.TextToSpeech
 import android.content.Intent
 import android.app.RemoteInput
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.Locale
 
 /* ========================================
 APP STATE & ENUMS
 ======================================== */
 object AppState {
-    var isListening = AtomicBoolean(false)
+    var isListening = java.util.concurrent.atomic.AtomicBoolean(false)
     var awaitingWaReply = false
     var lastWaNotification: StatusBarNotification? = null
     var lastSpokenText: String = ""
@@ -40,9 +38,13 @@ object AppState {
 }
 
 /* ========================================
+APP CONTEXT HOLDER
+======================================== */
+object AppContextHolder { lateinit var context: Context }
+
+/* ========================================
 MEMORY ENGINE
 ======================================== */
-
 enum class MemoryType { CORE_IDENTITY, EMOTIONAL, SOCIAL, TEMPORAL }
 
 @Entity(tableName = "memory_store")
@@ -96,25 +98,8 @@ class SmartMemoryEngine(context: Context) {
     private val dao = MemoryDatabase.get(context).memoryDao()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    fun remember(
-        type: MemoryType,
-        summary: String,
-        emotion: String? = null,
-        relatedPerson: String? = null,
-        importance: Int = 5
-    ) {
-        scope.launch {
-            dao.insert(
-                MemoryEntity(
-                    type = type,
-                    summary = summary,
-                    emotion = emotion,
-                    relatedPerson = relatedPerson,
-                    timestamp = System.currentTimeMillis(),
-                    importance = importance
-                )
-            )
-        }
+    fun remember(type: MemoryType, summary: String, emotion: String? = null, relatedPerson: String? = null, importance: Int = 5) {
+        scope.launch { dao.insert(MemoryEntity(type, summary, emotion, relatedPerson, System.currentTimeMillis(), importance)) }
     }
 
     suspend fun getEmotionalContext(): String? {
@@ -122,41 +107,15 @@ class SmartMemoryEngine(context: Context) {
         return memories.firstOrNull { it.type == MemoryType.EMOTIONAL }?.summary
     }
 
-    suspend fun getPersonContext(name: String): String? {
-        return dao.getMemoriesByPerson(name)
-            .maxByOrNull { it.importance }
-            ?.summary
-    }
+    suspend fun getPersonContext(name: String): String? = dao.getMemoriesByPerson(name).maxByOrNull { it.importance }?.summary
 
-    fun decayMemory() {
-        scope.launch { dao.forgetLowImportance() }
-    }
-
-    fun wipeMemory() {
-        scope.launch { dao.wipeAll() }
-    }
-}
-
-data class ShortMemory(
-    val topic: String,
-    val intent: String,
-    val emotion: String,
-    val timestamp: Long
-)
-
-object ShortMemoryStore {
-    private val memories = mutableListOf<ShortMemory>()
-    fun add(topic: String, intent: String, emotion: String) {
-        memories.add(ShortMemory(topic, intent, emotion, System.currentTimeMillis()))
-        if (memories.size > 10) memories.removeAt(0)
-    }
-    fun recent(): List<ShortMemory> = memories
+    fun decayMemory() { scope.launch { dao.forgetLowImportance() } }
+    fun wipeMemory() { scope.launch { dao.wipeAll() } }
 }
 
 /* ========================================
 VOICE ENGINE
 ======================================== */
-
 enum class VoiceEmotion { CALM, HAPPY, SAD, TIRED, ANGRY, CARING, SERIOUS }
 enum class SpeechIntent { RESPOND, INFORM, INSTRUCT }
 
@@ -168,38 +127,28 @@ object SpeechOutput {
             tts.setSpeechRate(0.9f)
         }
     }
-    fun speak(text: String) {
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "smarteyex_voice")
-    }
+    fun speak(text: String) { tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "smarteyex_voice") }
 }
 
 class VoiceProsodyEngine {
-    fun build(emotion: VoiceEmotion, intent: SpeechIntent): ProsodyProfile {
-        return when (emotion) {
-            VoiceEmotion.SAD -> ProsodyProfile(0.85f, 0.8f, 600, 1.0f)
-            VoiceEmotion.HAPPY -> ProsodyProfile(1.1f, 1.05f, 250, 0.8f)
-            VoiceEmotion.TIRED -> ProsodyProfile(0.9f, 0.75f, 700, 0.9f)
-            VoiceEmotion.ANGRY -> ProsodyProfile(1.0f, 1.15f, 200, 0.2f)
-            else -> ProsodyProfile(1.0f, 1.0f, 350, 0.6f)
-        }
+    fun build(emotion: VoiceEmotion, intent: SpeechIntent): ProsodyProfile = when (emotion) {
+        VoiceEmotion.SAD -> ProsodyProfile(0.85f, 0.8f, 600, 1.0f)
+        VoiceEmotion.HAPPY -> ProsodyProfile(1.1f, 1.05f, 250, 0.8f)
+        VoiceEmotion.TIRED -> ProsodyProfile(0.9f, 0.75f, 700, 0.9f)
+        VoiceEmotion.ANGRY -> ProsodyProfile(1.0f, 1.15f, 200, 0.2f)
+        else -> ProsodyProfile(1.0f, 1.0f, 350, 0.6f)
     }
 }
 
-data class ProsodyProfile(
-    val pitch: Float,
-    val speed: Float,
-    val pauseMs: Int,
-    val warmth: Float
-)
+data class ProsodyProfile(val pitch: Float, val speed: Float, val pauseMs: Int, val warmth: Float)
 
-class VoiceInputController(val context: Context) {
-    fun startListening(onResult: (String) -> Unit) {
+class VoiceInputController(val context: Context, val scope: CoroutineScope) {
+    fun startListening(onResult: suspend (String) -> Unit) {
         val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
         recognizer.setRecognitionListener(object : RecognitionListener {
             override fun onResults(results: Bundle) {
-                val text = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    ?.firstOrNull() ?: return
-                onResult(text)
+                val text = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull() ?: return
+                scope.launch { onResult(text) }
             }
             override fun onError(error: Int) {}
             override fun onReadyForSpeech(params: Bundle?) {}
@@ -210,45 +159,6 @@ class VoiceInputController(val context: Context) {
             override fun onPartialResults(partialResults: Bundle?) {}
             override fun onEvent(eventType: Int, params: Bundle?) {}
         })
-    }
-}
-
-object CurhatEngine {
-    fun respond(emotion: AppState.Emotion): String {
-        return when (emotion) {
-            AppState.Emotion.SAD -> "gue dengerin ya… lo nggak sendirian. pelan aja, nggak usah kuat-kuat."
-            AppState.Emotion.TIRED -> "capek itu manusiawi. lo udah sejauh ini, itu aja udah keren."
-            AppState.Emotion.ANGRY -> "marah tuh wajar. yang penting lo nggak nyakitin diri lo sendiri."
-            AppState.Emotion.EMPTY -> "kalau lagi kosong, gue di sini. diem bareng juga gapapa."
-            else -> "gue denger kok. lanjut aja ngomongnya."
-        }
-    }
-}
-
-object VoiceEngine {
-    private lateinit var recognizer: SpeechRecognizer
-    private lateinit var context: Context
-    fun start(ctx: Context) {
-        context = ctx
-        recognizer = SpeechRecognizer.createSpeechRecognizer(ctx)
-        recognizer.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) {}
-            override fun onBeginningOfSpeech() {}
-            override fun onRmsChanged(rmsdB: Float) {}
-            override fun onBufferReceived(buffer: ByteArray?) {}
-            override fun onEndOfSpeech() {}
-            override fun onError(error: Int) {}
-            override fun onPartialResults(partialResults: Bundle?) {}
-            override fun onEvent(eventType: Int, params: Bundle?) {}
-            override fun onResults(results: Bundle) {
-                val spokenText = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    ?.firstOrNull() ?: return
-                AppState.lastSpokenText = spokenText
-            }
-        })
-        listen()
-    }
-    private fun listen() {
         val intent = RecognizerIntent().apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
@@ -256,99 +166,29 @@ object VoiceEngine {
         recognizer.startListening(intent)
         AppState.isListening.set(true)
     }
-    fun stop() {
-        recognizer.stopListening()
-        AppState.isListening.set(false)
-    }
 }
 
 /* ========================================
-WA NOTIF & REPLY
+CURHAT & PERSONA ENGINE
 ======================================== */
-
-object WhatsAppReplySender {
-    fun sendReply(sbn: StatusBarNotification, reply: String) {
-        val notification = sbn.notification
-        val actions = notification.actions ?: return
-        for (action in actions) {
-            if (action.remoteInputs != null) {
-                val intent = Intent()
-                val bundle = Bundle()
-                for (input in action.remoteInputs) {
-                    bundle.putCharSequence(input.resultKey, reply)
-                }
-                RemoteInput.addResultsToIntent(action.remoteInputs, intent, bundle)
-                action.actionIntent.send(null, 0, intent)
-            }
-        }
+object CurhatEngine {
+    fun respond(emotion: AppState.Emotion): String = when (emotion) {
+        AppState.Emotion.SAD -> "gue dengerin ya… lo nggak sendirian. pelan aja, nggak usah kuat-kuat."
+        AppState.Emotion.TIRED -> "capek itu manusiawi. lo udah sejauh ini, itu aja udah keren."
+        AppState.Emotion.ANGRY -> "marah tuh wajar. yang penting lo nggak nyakitin diri lo sendiri."
+        AppState.Emotion.EMPTY -> "kalau lagi kosong, gue di sini. diem bareng juga gapapa."
+        else -> "gue denger kok. lanjut aja ngomongnya."
     }
 }
-
-class WaNotificationService : NotificationListenerService() {
-    override fun onNotificationPosted(sbn: StatusBarNotification) {
-        if (!sbn.packageName.contains("whatsapp")) return
-        AppState.lastWaNotification = sbn
-    }
-}
-
-class WaReplyAccessibilityService : AccessibilityService() {
-    companion object { var instance: WaReplyAccessibilityService? = null
-        fun sendReply(text: String) { instance?.replyToLatest(text) } }
-    override fun onServiceConnected() { instance = this }
-    private fun replyToLatest(text: String) {
-        val root = rootInActiveWindow ?: return
-        val replyButton = root.findAccessibilityNodeInfosByText("Reply").firstOrNull() ?: return
-        replyButton.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-        Handler(Looper.getMainLooper()).postDelayed({
-            val input = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
-            val args = Bundle()
-            args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
-            input?.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-            input?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-        }, 300)
-    }
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
-    override fun onInterrupt() {}
-}
-
-/* ========================================
-SMART BRAIN
-======================================== */
-
-object SmartEyeXBrain {
-    fun onWaMessageReceived(sender: String, message: String) {
-        if (AppState.awaitingWaReply) return
-    }
-    fun onUserVoiceReply(text: String) {
-        WaReplyAccessibilityService.sendReply(text)
-    }
-}
-
-/* ========================================
-PERSONA ENGINE
-======================================== */
 
 enum class PersonaMask { FRIENDLY, PARTNER, INSTRUCTOR, PARENT, ALERT }
-
-data class PersonaContext(
-    val mask: PersonaMask,
-    val tone: String,
-    val pitch: Float,
-    val speed: Float,
-    val warmth: Float
-)
+data class PersonaContext(val mask: PersonaMask, val tone: String, val pitch: Float, val speed: Float, val warmth: Float)
 
 object PersonaEngine {
     private var currentMask: PersonaMask = PersonaMask.FRIENDLY
     private var microShiftLevel: Float = 0.0f
 
-    fun analyzeContext(
-        speakerCount: Int,
-        speechSpeed: Float,
-        emotionLevel: Int,
-        keywordTrigger: Boolean,
-        userMentionedAI: Boolean
-    ): PersonaContext {
+    fun analyzeContext(speakerCount: Int, speechSpeed: Float, emotionLevel: Int, keywordTrigger: Boolean, userMentionedAI: Boolean): PersonaContext {
         microShiftLevel = (emotionLevel / 10f) + if (keywordTrigger) 0.1f else 0.0f
         currentMask = when {
             speakerCount > 3 -> PersonaMask.FRIENDLY
@@ -372,10 +212,6 @@ object PersonaEngine {
     }
 }
 
-/* ========================================
-CURHAT DEEP ENGINE
-======================================== */
-
 object CurhatDeepEngine {
     suspend fun respondToUser(userEmotion: AppState.Emotion): String {
         val memoryEngine = SmartMemoryEngine(AppContextHolder.context)
@@ -388,12 +224,24 @@ object CurhatDeepEngine {
 }
 
 /* ========================================
-SMARTEYE X FULL BRAIN
+SMART BRAIN
 ======================================== */
+object SmartEyeXBrain {
+    fun onWaMessageReceived(sender: String, message: String) {
+        if (AppState.awaitingWaReply) return
+        SpeechOutput.speak("Ada pesan dari $sender: ${message.take(80)}")
+        AppState.awaitingWaReply = true
+    }
 
-object SmartEyeXFullBrain {
+    fun onUserVoiceReply(text: String) { WaReplyAccessibilityService.sendReply(text) }
+}
+
+/* ========================================
+SMART EYE X FULL BRAIN
+======================================== */
+class SmartEyeXFullBrain(val scope: CoroutineScope) {
     private val personaEngine = PersonaEngine
-    private val memoryEngine: SmartMemoryEngine by lazy { SmartMemoryEngine(AppContextHolder.context) }
+    private val memoryEngine = SmartMemoryEngine(AppContextHolder.context)
 
     suspend fun processVoiceInput(spokenText: String) {
         val userEmotion = AppState.Emotion.SAD
@@ -409,9 +257,7 @@ object SmartEyeXFullBrain {
     }
 
     fun handleWaMessage(sender: String, message: String) {
-        AppState.lastWaNotification?.let {
-            SmartEyeXBrain.onWaMessageReceived(sender, message)
-        }
+        AppState.lastWaNotification?.let { SmartEyeXBrain.onWaMessageReceived(sender, message) }
     }
 
     fun rememberEvent(summary: String, emotion: String?, relatedPerson: String?, importance: Int) {
@@ -420,21 +266,22 @@ object SmartEyeXFullBrain {
 }
 
 /* ========================================
-APP CONTEXT HOLDER
+EXAMPLE USAGE SAFE
 ======================================== */
-object AppContextHolder {
-    lateinit var context: Context
-}
-
-/* ========================================
-EXAMPLE USAGE FLOW
-======================================== */
-fun exampleUsageFlow(ctx: Context) {
+fun exampleUsageFlowProduction(ctx: Context, scope: CoroutineScope) {
     AppContextHolder.context = ctx
     SpeechOutput.init(ctx)
     val memoryEngine = SmartMemoryEngine(ctx)
     memoryEngine.remember(MemoryType.CORE_IDENTITY, "User suka ngobrol malam hari", null, null, 6)
-    VoiceEngine.start(ctx)
-    SmartEyeXFullBrain.handleWaMessage("Zahra", "Halo, lagi sibuk ga?")
-    GlobalScope.launch { SmartEyeXFullBrain.processVoiceInput("gue lagi sedih nih, capek banget") }
+
+    val brain = SmartEyeXFullBrain(scope)
+    val voiceInput = VoiceInputController(ctx, scope)
+
+    voiceInput.startListening { spokenText ->
+        scope.launch {
+            brain.processVoiceInput(spokenText)
+        }
+    }
+
+    brain.handleWaMessage("Zahra", "Halo, lagi sibuk ga?")
 }
