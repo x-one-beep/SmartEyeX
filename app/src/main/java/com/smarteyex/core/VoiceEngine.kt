@@ -35,6 +35,16 @@ if (AppState.awaitingWaReply) {
     SpeechOutput.speak("udah gue kirim ya.")
 }
 
+val mode = socialEngine.evaluate(
+    SocialSignal(
+        speakerCount = 4,
+        avgSpeechSpeed = 1.3f,
+        emotionLevel = 6,
+        keywordTrigger = true,
+        userMentionedAI = false
+    )
+)
+
     fun stop() {
         recognizer.stopListening()
         AppState.isListening.set(false)
