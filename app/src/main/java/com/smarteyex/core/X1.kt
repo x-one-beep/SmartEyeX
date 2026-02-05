@@ -21,17 +21,28 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent 
 import android.speech.SpeechRecognizer 
 import android.speech.tts.TextToSpeech 
-import android.service.notification.NotificationListenerService import android.service.notification.StatusBarNotification import android.accessibilityservice.AccessibilityService import android.view.accessibility.AccessibilityEvent 
-import android.view.accessibility.AccessibilityNodeInfo import androidx.core.content.ContextCompat 
+import android.service.notification.NotificationListenerService import 
+android.service.notification.StatusBarNotification 
+import 
+android.accessibilityservice.AccessibilityService 
+import 
+android.view.accessibility.AccessibilityEvent 
+import 
+android.view.accessibility.AccessibilityNodeInfo 
+import androidx.core.content.ContextCompat 
 import androidx.lifecycle.LifecycleOwner 
 import androidx.room.* 
 import androidx.camera.core.CameraSelector 
 import androidx.camera.core.ImageAnalysis 
 import androidx.camera.core.ImageProxy 
-import androidx.camera.lifecycle.ProcessCameraProvider import com.google.mlkit.vision.common.InputImage 
+import 
+androidx.camera.lifecycle.ProcessCameraProvider 
+import com.google.mlkit.vision.common.InputImage 
 import com.google.mlkit.vision.face.Face 
 import com.google.mlkit.vision.face.FaceDetection 
-import com.google.mlkit.vision.face.FaceDetectorOptions import kotlinx.coroutines.* import java.util.* 
+import 
+com.google.mlkit.vision.face.FaceDetectorOptions 
+import kotlinx.coroutines.* import java.util.* 
 import java.util.concurrent.atomic.AtomicBoolean 
 import kotlin.math.log10 import kotlin.math.sqrt
 
