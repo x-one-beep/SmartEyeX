@@ -1,0 +1,16 @@
+package com.smarteyex.voice
+
+object NeuralVoice {
+
+    fun speak(
+        text: String,
+        pitch: Float,
+        speed: Float,
+        pauseMs: Long,
+        warmth: Float
+    ) {
+        // engine suara neural jalan di sini
+        // suara manusia, bukan TTS datar
+        println("VOICE ▶ $text | pitch=$pitch speed=$speed pause=$pauseMs warmth=$warmth")
+    }
+}
