@@ -16,12 +16,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_mainfull)
 
         AppContextHolder.context = applicationContext
 
         requestRuntimePermissions()
     }
+
 
     private fun requestRuntimePermissions() {
         val perms = arrayOf(
