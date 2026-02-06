@@ -8,6 +8,7 @@ import android.provider.Settings
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.smarteyex.core.R   // ✅ TAMBAHAN
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,7 +23,6 @@ class MainActivity : AppCompatActivity() {
 
         requestRuntimePermissions()
     }
-
 
     private fun requestRuntimePermissions() {
         val perms = arrayOf(
