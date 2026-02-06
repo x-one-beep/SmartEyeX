@@ -21,7 +21,7 @@
 
 <!-- 🔹 LAUNCHER ACTIVITY (WAJIB ADA) -->
         <activity
-            android:name=".MainActivity"
+            android:name="com.smarteyex.core.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
