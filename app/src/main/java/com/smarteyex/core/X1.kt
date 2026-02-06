@@ -43,20 +43,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.log10
 import kotlin.math.sqrt
 
-class MainActivity : AppCompatActivity() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-
-    setContentView(R.layout.activity_mainfull) // WAJIB
-
-    AppContextHolder.context = applicationContext
-
-    SpeechOutput.init(this)
-    SensorBrainIntegrator.init(this)
-    SmartDashboard.init(this)
-}
-}
 
 /* ======================================== APP CONTEXT HOLDER ======================================== */
 object AppContextHolder {
