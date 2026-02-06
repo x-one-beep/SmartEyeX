@@ -43,6 +43,24 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.log10
 import kotlin.math.sqrt
 
+class MainActivity : AppCompatActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // 1. Set global context (WAJIB)
+        AppContextHolder.context = applicationContext
+
+        // 2. Init semua engine TANPA SENTUH KODENYA
+        SpeechOutput.init(this)
+        SensorBrainIntegrator.init(this)
+        SmartDashboard.init(this)
+
+        // 3. App jadi background brain (headless)
+        finish()
+    }
+}
+
 /* ======================================== APP CONTEXT HOLDER ======================================== */
 object AppContextHolder {
     lateinit var context: Context
