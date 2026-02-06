@@ -15,14 +15,12 @@ class MainActivity : AppCompatActivity() {
     private val REQ_PERMS = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    super.onCreate(savedInstanceState)
+    setContentView(R.layout.activity_mainfull)
 
-        setContentView(R.layout.activity_mainfull)
-
-        AppContextHolder.context = applicationContext
-
-        requestRuntimePermissions()
-    }
+    AppContextHolder.context = applicationContext
+    requestRuntimePermissions()
+}
 
     private fun requestRuntimePermissions() {
         val perms = arrayOf(
