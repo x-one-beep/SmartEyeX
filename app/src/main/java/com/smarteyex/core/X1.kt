@@ -46,19 +46,15 @@ import kotlin.math.sqrt
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    super.onCreate(savedInstanceState)
 
-        // 1. Set global context (WAJIB)
-        AppContextHolder.context = applicationContext
+    setContentView(R.layout.activity_mainfull) // WAJIB
 
-        // 2. Init semua engine TANPA SENTUH KODENYA
-        SpeechOutput.init(this)
-        SensorBrainIntegrator.init(this)
-        SmartDashboard.init(this)
+    AppContextHolder.context = applicationContext
 
-        // 3. App jadi background brain (headless)
-        finish()
-    }
+    SpeechOutput.init(this)
+    SensorBrainIntegrator.init(this)
+    SmartDashboard.init(this)
 }
 
 /* ======================================== APP CONTEXT HOLDER ======================================== */
