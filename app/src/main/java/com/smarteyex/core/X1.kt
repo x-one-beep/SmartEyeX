@@ -246,15 +246,15 @@ class VoiceInputController(private val context: Context) {
             override fun onEvent(eventType: Int, params: Bundle?) {}
         })
 
-        val intent = RecognizerIntent().apply {
-            putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-            )
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-        }
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+    putExtra(
+        RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+    )
+    putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+}
 
-        recognizer?.startListening(intent)
+recognizer?.startListening(intent)
         AppState.isListening.set(true)
     }
 
