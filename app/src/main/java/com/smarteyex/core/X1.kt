@@ -56,6 +56,7 @@ class MainActivity : AppCompatActivity() {
     SensorBrainIntegrator.init(this)
     SmartDashboard.init(this)
 }
+}
 
 /* ======================================== APP CONTEXT HOLDER ======================================== */
 object AppContextHolder {
