@@ -1,4 +1,4 @@
-package com.smarteyex.fullcore
+package com.smarteyex.core
 
 import android.Manifest
 import android.app.Notification
