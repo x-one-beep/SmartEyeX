@@ -3,12 +3,12 @@ package com.smarteyex.core
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.smarteyex.core.R
 
 class MainActivity : AppCompatActivity() {
 
@@ -16,9 +16,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // UI boleh minimal, ga pengaruh otak
         setContentView(R.layout.activity_mainfull)
 
+        // Context global WAJIB
         AppContextHolder.context = applicationContext
+
         requestRuntimePermissions()
     }
 
@@ -28,11 +32,9 @@ class MainActivity : AppCompatActivity() {
             Manifest.permission.CAMERA
         )
 
-        val need = perms.filter { perm ->
-            ContextCompat.checkSelfPermission(
-                this@MainActivity,
-                perm
-            ) != PackageManager.PERMISSION_GRANTED
+        val need = perms.filter {
+            ContextCompat.checkSelfPermission(this, it)
+                    != PackageManager.PERMISSION_GRANTED
         }
 
         if (need.isNotEmpty()) {
@@ -46,7 +48,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @Deprecated("Deprecated in API 33+, still required for backward compatibility")
+    @Deprecated("Still required for < API 33")
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -57,15 +59,27 @@ class MainActivity : AppCompatActivity() {
             permissions,
             grantResults
         )
+
+        // MAU user allow / deny → app TETAP JALAN
         continueBoot()
     }
 
     private fun continueBoot() {
+
+        // ⛔ JANGAN DI-BLOCK, biar user tau
         startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
 
-        SpeechOutput.init(this)
-        SensorBrainIntegrator.init(this)
-        SmartDashboard.init(this)
+        // 🫀 NYALAIN JANTUNG (FOREGROUND SERVICE)
+        val brainIntent = Intent(this, BrainForegroundService::class.java)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(brainIntent)
+        } else {
+            startService(brainIntent)
+        }
+
+        // ❗ Activity BOLEH MATI
+        finish()
     }
 }
