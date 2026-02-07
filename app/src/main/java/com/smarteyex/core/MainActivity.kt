@@ -8,19 +8,19 @@ import android.provider.Settings
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.smarteyex.core.R   // ✅ TAMBAHAN
+import com.smarteyex.core.R
 
 class MainActivity : AppCompatActivity() {
 
     private val REQ_PERMS = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    setContentView(R.layout.activity_mainfull)
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_mainfull)
 
-    AppContextHolder.context = applicationContext
-    requestRuntimePermissions()
-}
+        AppContextHolder.context = applicationContext
+        requestRuntimePermissions()
+    }
 
     private fun requestRuntimePermissions() {
         val perms = arrayOf(
@@ -29,8 +29,10 @@ class MainActivity : AppCompatActivity() {
         )
 
         val need = perms.filter { perm ->
-            ContextCompat.checkSelfPermission(this, perm)
-                    != PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                this@MainActivity,
+                perm
+            ) != PackageManager.PERMISSION_GRANTED
         }
 
         if (need.isNotEmpty()) {
@@ -44,6 +46,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @Deprecated("Deprecated in API 33+, still required for backward compatibility")
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
