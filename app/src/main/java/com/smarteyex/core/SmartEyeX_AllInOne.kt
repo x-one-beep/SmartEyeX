@@ -7,22 +7,21 @@ import android.provider.Settings
 import android.util.Log
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.*
 import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicBoolean
 
 /* =========================================================
-   🫀 APPLICATION CORE
+   🫀 APPLICATION
    ========================================================= */
 class SmartEyeXApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        SystemKernel.boot(this)
+        SystemHeart.boot(this)
     }
 }
 
 /* =========================================================
-   🚪 LAUNCHER (APK PASTI MUNCUL)
+   🚪 LAUNCHER ACTIVITY (APK MUNCUL)
    ========================================================= */
 class LauncherActivity : AppCompatActivity() {
 
@@ -30,11 +29,10 @@ class LauncherActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         val tv = TextView(this)
-        tv.text = "SmartEyeX running"
-        tv.textSize = 16f
+        tv.text = "SmartEyeX aktif"
+        tv.textSize = 18f
         setContentView(tv)
 
-        // Tidak memaksa, tidak crash
         safeOpen(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
         safeOpen(Settings.ACTION_ACCESSIBILITY_SETTINGS)
     }
@@ -47,56 +45,32 @@ class LauncherActivity : AppCompatActivity() {
 }
 
 /* =========================================================
-   ⚙️ SYSTEM KERNEL (JANTUNG SEBENARNYA)
+   ❤️ SYSTEM HEART (ORKESTRATOR UTAMA)
    ========================================================= */
-object SystemKernel {
+object SystemHeart {
 
     private val alive = AtomicBoolean(false)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    fun boot(ctx: Context) {
+    fun boot(context: Context) {
         if (alive.getAndSet(true)) return
 
-        AppContext.context = ctx.applicationContext
-        LogBus.log("BOOT")
+        AppContextHolder.context = context.applicationContext
+        LogBus.log("SYSTEM BOOT")
 
-        Guard.run {
-            hookX1()
-            startLifecycles()
-            startWatchdog()
-            startMemoryLoop()
-            startLearningLoop()
-            startPersonaLoop()
-            startPluginShell()
-            startOTAShell()
-        }
+        Guard.safe { SpeechOutput.init(context) }
+        Guard.safe { SensorBrainIntegrator.init(context) }
+        Guard.safe { SmartDashboard.init(context) }
+
+        startPersonaPulse()
+        startMemoryPulse()
+        startLearningPulse()
+        startWatchdog()
+        startPluginShell()
+        startOTAShell()
     }
 
-    /* ---------- SAFE X1 HOOK (TIDAK WAJIB ADA) ---------- */
-    private fun hookX1() {
-        try {
-            val cls = Class.forName("com.smarteyex.core.X1")
-            cls.methods.forEach {
-                if (it.name.contains("init", true)) {
-                    it.invoke(null)
-                }
-            }
-            LogBus.log("X1 hooked")
-        } catch (_: Throwable) {
-            LogBus.log("X1 not present, continue")
-        }
-    }
-
-    /* ---------- BASIC LIFECYCLE ---------- */
-    private fun startLifecycles() {
-        Guard.run {
-            SpeechOutput.init()
-            SensorBridge.init()
-            Dashboard.init()
-        }
-    }
-
-    /* ---------- WATCHDOG (PASSIVE, NO RESTART FORCE) ---------- */
+    /* ================= WATCHDOG ================= */
     private fun startWatchdog() {
         scope.launch {
             while (true) {
@@ -106,140 +80,67 @@ object SystemKernel {
         }
     }
 
-    /* ---------- MEMORY CONSOLIDATION ---------- */
-    private fun startMemoryLoop() {
+    /* ================= PERSONA ================= */
+    private fun startPersonaPulse() {
+        scope.launch {
+            while (true) {
+                delay(2_000)
+                val ctx = PersonaEngine.analyzeContext(
+                    AppState.currentSpeakerCount,
+                    AppState.currentSpeechSpeed,
+                    AppState.currentEmotionLevel,
+                    AppState.keywordDetected,
+                    AppState.userMentionedAI
+                )
+                LogBus.log("Persona tone: ${ctx.tone}")
+            }
+        }
+    }
+
+    /* ================= MEMORY ================= */
+    private fun startMemoryPulse() {
         scope.launch(Dispatchers.IO) {
             while (true) {
                 delay(30_000)
-                MemoryEngine.compact()
+                SmartMemoryEngine(AppContextHolder.context).decayMemory()
             }
         }
     }
 
-    /* ---------- SELF LEARNING (SAFE ADAPTIVE VARS) ---------- */
-    private fun startLearningLoop() {
+    /* ================= LEARNING ================= */
+    private fun startLearningPulse() {
         scope.launch {
             while (true) {
                 delay(10_000)
-                AppState.learn()
+                AppState.currentSpeechSpeed =
+                    (AppState.currentSpeechSpeed + 0.01f)
+                        .coerceIn(0.8f, 1.5f)
             }
         }
     }
 
-    /* ---------- PERSONA (PASSIVE SWITCH) ---------- */
-    private fun startPersonaLoop() {
-        scope.launch {
-            while (true) {
-                delay(5_000)
-                PersonaEngine.evaluate()
-            }
-        }
-    }
-
-    /* ---------- PLUGIN SHELL (NO LOAD EXEC) ---------- */
+    /* ================= PLUGIN ================= */
     private fun startPluginShell() {
-        PluginManager.init()
+        LogBus.log("Plugin system ready (idle)")
     }
 
-    /* ---------- OTA SHELL (DISABLED BY DEFAULT) ---------- */
+    /* ================= OTA ================= */
     private fun startOTAShell() {
-        OTAEngine.prepare()
+        LogBus.log("OTA engine ready (idle)")
     }
 }
 
 /* =========================================================
-   🛡️ CRASH GUARD
+   🛡️ GUARD
    ========================================================= */
 object Guard {
-    inline fun run(block: () -> Unit) {
+    fun safe(block: () -> Unit) {
         try {
             block()
         } catch (e: Throwable) {
-            LogBus.log("Guard: ${e.message}")
+            LogBus.log("Guard catch: ${e.message}")
         }
     }
-}
-
-/* =========================================================
-   🧠 STATE
-   ========================================================= */
-object AppState {
-    var speechSpeed = 1.0f
-    var emotion = 0.5f
-
-    fun learn() {
-        speechSpeed = (speechSpeed + 0.01f).coerceIn(0.8f, 1.3f)
-    }
-}
-
-/* =========================================================
-   🎭 PERSONA
-   ========================================================= */
-object PersonaEngine {
-    fun evaluate() {
-        LogBus.log("Persona check")
-    }
-}
-
-/* =========================================================
-   🧠 MEMORY
-   ========================================================= */
-object MemoryEngine {
-    fun compact() {
-        LogBus.log("Memory compact")
-    }
-}
-
-/* =========================================================
-   🔌 PLUGIN (SHELL ONLY)
-   ========================================================= */
-object PluginManager {
-    fun init() {
-        LogBus.log("Plugin shell ready")
-    }
-}
-
-/* =========================================================
-   🛰️ OTA (SHELL ONLY)
-   ========================================================= */
-object OTAEngine {
-    fun prepare() {
-        LogBus.log("OTA shell idle")
-    }
-}
-
-/* =========================================================
-   🔊 SPEECH (SAFE STUB)
-   ========================================================= */
-object SpeechOutput {
-    fun init() {
-        LogBus.log("Speech init")
-    }
-}
-
-/* =========================================================
-   📡 SENSOR BRIDGE
-   ========================================================= */
-object SensorBridge {
-    fun init() {
-        LogBus.log("Sensor bridge init")
-    }
-}
-
-/* =========================================================
-   📊 DASHBOARD
-   ========================================================= */
-object Dashboard {
-    fun init() {
-        LogBus.log("Dashboard init")
-    }
-}
-
-/* =========================================================
-   📍 APP CONTEXT HOLDER
-   ========================================================= */
-object AppContext {
-    lateinit var context: Context
 }
 
 /* =========================================================
